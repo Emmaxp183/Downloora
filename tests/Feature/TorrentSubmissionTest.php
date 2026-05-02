@@ -1,10 +1,13 @@
 <?php
 
+use App\Enums\TorrentSourceType;
 use App\Enums\TorrentStatus;
 use App\Jobs\InspectTorrentMetadata;
 use App\Models\Torrent;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
 
 test('it identifies active torrents for a user', function () {
     $user = User::factory()->create();
@@ -45,6 +48,49 @@ test('unverified users cannot submit a magnet torrent', function () {
         ->assertRedirect(route('verification.notice', absolute: false));
 
     expect(Torrent::query()->count())->toBe(0);
+});
+
+test('verified users can upload a torrent file', function () {
+    Bus::fake();
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post('/torrents', [
+            'torrent_file' => UploadedFile::fake()->create('example.torrent', 12),
+        ])
+        ->assertRedirect(route('dashboard', absolute: false))
+        ->assertSessionHasNoErrors();
+
+    $torrent = Torrent::query()->firstOrFail();
+
+    expect($torrent->user_id)->toBe($user->id)
+        ->and($torrent->source_type)->toBe(TorrentSourceType::TorrentFile)
+        ->and($torrent->magnet_uri)->toBeNull()
+        ->and($torrent->status)->toBe(TorrentStatus::PendingMetadata)
+        ->and($torrent->torrent_file_path)->not->toBeNull();
+
+    Storage::disk('s3')->assertExists($torrent->torrent_file_path);
+    Bus::assertDispatched(InspectTorrentMetadata::class);
+});
+
+test('uploaded torrent files must have a torrent extension', function () {
+    Bus::fake();
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->from(route('dashboard'))
+        ->post('/torrents', [
+            'torrent_file' => UploadedFile::fake()->create('example.txt', 12),
+        ])
+        ->assertRedirect(route('dashboard', absolute: false))
+        ->assertSessionHasErrors('torrent_file');
+
+    expect(Torrent::query()->count())->toBe(0);
+    Bus::assertNotDispatched(InspectTorrentMetadata::class);
 });
 
 test('users with an active torrent cannot submit another torrent', function () {

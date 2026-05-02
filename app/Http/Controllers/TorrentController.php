@@ -7,7 +7,9 @@ use App\Enums\TorrentStatus;
 use App\Http\Requests\StoreTorrentRequest;
 use App\Jobs\InspectTorrentMetadata;
 use App\Models\Torrent;
+use App\Services\Torrents\QBittorrentClient;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class TorrentController extends Controller
@@ -41,6 +43,22 @@ class TorrentController extends Controller
         ]);
 
         InspectTorrentMetadata::dispatch($torrent);
+
+        return to_route('dashboard');
+    }
+
+    public function destroy(Torrent $torrent, QBittorrentClient $client): RedirectResponse
+    {
+        Gate::authorize('delete', $torrent);
+
+        if (filled($torrent->qbittorrent_hash)) {
+            $client->delete($torrent->qbittorrent_hash);
+        }
+
+        $torrent->forceFill([
+            'status' => TorrentStatus::Cancelled,
+            'error_message' => null,
+        ])->save();
 
         return to_route('dashboard');
     }

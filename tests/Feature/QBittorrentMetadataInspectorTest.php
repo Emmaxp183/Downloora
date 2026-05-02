@@ -127,4 +127,7 @@ test('it inspects torrent file metadata by matching qbittorrent save path', func
         ->and($metadata->files)->toBe([
             ['path' => 'archive.zip', 'size_bytes' => 1000],
         ]);
+
+    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/add'
+        && $request->hasFile('torrents', 'torrent-bytes', 'example.torrent'));
 });

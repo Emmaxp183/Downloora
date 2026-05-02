@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('torrents', [TorrentController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('torrents.store');
+    Route::delete('torrents/{torrent}', [TorrentController::class, 'destroy'])->name('torrents.destroy');
     Route::get('library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('files/{storedFile}/download', [StoredFileAccessController::class, 'download'])
         ->middleware('signed')

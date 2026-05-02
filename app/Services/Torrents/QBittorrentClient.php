@@ -100,13 +100,9 @@ class QBittorrentClient
 
     private function request(): PendingRequest
     {
-        $cookieJar = new CookieJar();
+        $cookieJar = new CookieJar;
 
-        $request = Http::withOptions(['cookies' => $cookieJar])
-            ->timeout((int) config('torrents.qbittorrent.timeout', 10))
-            ->connectTimeout(5);
-
-        $request
+        $this->baseRequest($cookieJar)
             ->asForm()
             ->post($this->url('/api/v2/auth/login'), [
                 'username' => config('torrents.qbittorrent.username'),
@@ -114,7 +110,14 @@ class QBittorrentClient
             ])
             ->throw();
 
-        return $request;
+        return $this->baseRequest($cookieJar);
+    }
+
+    private function baseRequest(CookieJar $cookieJar): PendingRequest
+    {
+        return Http::withOptions(['cookies' => $cookieJar])
+            ->timeout((int) config('torrents.qbittorrent.timeout', 10))
+            ->connectTimeout(5);
     }
 
     private function url(string $path): string
