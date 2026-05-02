@@ -15,7 +15,7 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
         $hash = $this->extractInfoHash($torrent);
 
         if ($torrent->source_type === TorrentSourceType::Magnet) {
-            $this->client->addMagnet($torrent, paused: true);
+            $this->client->addMagnet($torrent);
         } elseif ($torrent->source_type === TorrentSourceType::TorrentFile) {
             $this->client->addTorrentFile($torrent, paused: true);
         } else {
@@ -23,24 +23,11 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
         }
 
         try {
-            $details = $this->waitForMetadata($torrent, $hash);
+            [$details, $files] = $this->waitForMetadata($torrent, $hash);
             $hash = strtolower((string) ($details['hash'] ?? $hash));
 
             if ($hash === '') {
                 throw new RuntimeException('qBittorrent did not return a torrent hash.');
-            }
-
-            $files = collect($this->client->files($hash))
-                ->map(fn (array $file): array => [
-                    'path' => (string) ($file['name'] ?? ''),
-                    'size_bytes' => (int) ($file['size'] ?? 0),
-                ])
-                ->filter(fn (array $file): bool => $file['path'] !== '' && $file['size_bytes'] > 0)
-                ->values()
-                ->all();
-
-            if ($files === []) {
-                throw new RuntimeException('qBittorrent did not return torrent files.');
             }
 
             return new TorrentMetadata(
@@ -57,7 +44,7 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{0: array<string, mixed>, 1: array<int, array{path: string, size_bytes: int}>}
      */
     private function waitForMetadata(Torrent $torrent, ?string $hash): array
     {
@@ -70,7 +57,12 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
                 : $this->findTorrentBySavePath($torrent);
 
             if ($this->hasMetadata($details)) {
-                return $details;
+                $detailsHash = strtolower((string) ($details['hash'] ?? $hash));
+                $files = $this->metadataFiles($detailsHash);
+
+                if ($files !== []) {
+                    return [$details, $files];
+                }
             }
 
             if ($attempt < $attempts && $intervalMs > 0) {
@@ -78,7 +70,7 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
             }
         }
 
-        throw new RuntimeException('Timed out while waiting for torrent metadata.');
+        throw new RuntimeException('Timed out while waiting for torrent metadata files.');
     }
 
     /**
@@ -106,6 +98,25 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
     {
         return ($details['hash'] ?? null) !== null
             && ($details['name'] ?? null) !== null;
+    }
+
+    /**
+     * @return array<int, array{path: string, size_bytes: int}>
+     */
+    private function metadataFiles(string $hash): array
+    {
+        if ($hash === '') {
+            return [];
+        }
+
+        return collect($this->client->files($hash))
+            ->map(fn (array $file): array => [
+                'path' => (string) ($file['name'] ?? ''),
+                'size_bytes' => (int) ($file['size'] ?? 0),
+            ])
+            ->filter(fn (array $file): bool => $file['path'] !== '' && $file['size_bytes'] > 0)
+            ->values()
+            ->all();
     }
 
     private function extractInfoHash(Torrent $torrent): ?string

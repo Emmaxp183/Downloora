@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\StoredFile;
 use App\Models\User;
+
 class StoredFilePolicy
 {
     /**
@@ -43,7 +44,7 @@ class StoredFilePolicy
      */
     public function delete(User $user, StoredFile $storedFile): bool
     {
-        return false;
+        return $storedFile->user()->is($user);
     }
 
     /**

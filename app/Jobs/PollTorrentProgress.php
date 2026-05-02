@@ -46,7 +46,11 @@ class PollTorrentProgress implements ShouldQueue
                 ])->save();
 
                 ImportCompletedTorrent::dispatch($torrent);
+
+                return;
             }
+
+            PollTorrentProgress::dispatch($torrent)->delay(now()->addSeconds(15));
         } catch (Throwable $throwable) {
             $torrent->forceFill([
                 'status' => TorrentStatus::DownloadFailed,

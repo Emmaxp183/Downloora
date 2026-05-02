@@ -138,6 +138,8 @@ services:
       POSTGRES_DB: ${DB_DATABASE:-seedr}
       POSTGRES_USER: ${DB_USERNAME:-seedr}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -185,8 +187,11 @@ services:
       RUSTFS_ADDRESS: :9000
       RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-rustfsadmin}
       RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY:-rustfsadmin}
-      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_CONSOLE_ENABLE: "true"
     command: ["/data"]
+    ports:
+      - "${RUSTFS_API_PORT:-9000}:9000"
+      - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
     volumes:
       - rustfs-data:/data
     networks:

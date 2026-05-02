@@ -9,6 +9,8 @@ use App\Services\Torrents\QBittorrentClient;
 use Illuminate\Support\Facades\Bus;
 
 test('queued torrents become downloading when qBittorrent accepts them', function () {
+    Bus::fake([PollTorrentProgress::class]);
+
     $torrent = Torrent::factory()->create([
         'status' => TorrentStatus::Queued,
         'qbittorrent_hash' => null,
@@ -27,6 +29,8 @@ test('queued torrents become downloading when qBittorrent accepts them', functio
     expect($torrent->refresh()->status)->toBe(TorrentStatus::Downloading)
         ->and($torrent->qbittorrent_hash)->toBe('abc123')
         ->and($torrent->started_at)->not->toBeNull();
+
+    Bus::assertDispatched(PollTorrentProgress::class);
 });
 
 test('qBittorrent start failures mark torrents as download failed', function () {
@@ -47,6 +51,8 @@ test('qBittorrent start failures mark torrents as download failed', function () 
 });
 
 test('polling updates download progress', function () {
+    Bus::fake([PollTorrentProgress::class]);
+
     $torrent = Torrent::factory()->create([
         'status' => TorrentStatus::Downloading,
         'qbittorrent_hash' => 'abc123',
@@ -69,6 +75,8 @@ test('polling updates download progress', function () {
     expect($torrent->refresh()->progress)->toBe(42)
         ->and($torrent->downloaded_bytes)->toBe(420)
         ->and($torrent->status)->toBe(TorrentStatus::Downloading);
+
+    Bus::assertDispatched(PollTorrentProgress::class);
 });
 
 test('completed torrents are marked importing and dispatch import job', function () {

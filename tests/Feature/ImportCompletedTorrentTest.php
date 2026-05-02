@@ -47,3 +47,24 @@ test('it imports completed torrent files into s3 and removes qBittorrent torrent
 
     Storage::disk('s3')->assertExists("users/{$torrent->user_id}/torrents/{$torrent->id}/Movies/video.mp4");
 });
+
+test('it does not create stored file records when import storage fails', function () {
+    Storage::fake('s3');
+    Storage::fake('local');
+
+    $torrent = Torrent::factory()->create([
+        'status' => TorrentStatus::Importing,
+        'qbittorrent_hash' => 'abc123',
+    ]);
+
+    TorrentFile::factory()->for($torrent)->create([
+        'path' => 'Movies/missing.mp4',
+        'size_bytes' => 12,
+    ]);
+
+    app()->call([new ImportCompletedTorrent($torrent), 'handle']);
+
+    expect($torrent->refresh()->status)->toBe(TorrentStatus::ImportFailed)
+        ->and(StoredFile::query()->count())->toBe(0)
+        ->and(StorageUsageEvent::query()->count())->toBe(0);
+});

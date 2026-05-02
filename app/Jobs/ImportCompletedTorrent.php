@@ -9,10 +9,11 @@ use App\Models\Torrent;
 use App\Services\Torrents\QBittorrentClient;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Foundation\Queue\Queueable;
+use RuntimeException;
 use Throwable;
 
 class ImportCompletedTorrent implements ShouldQueue
@@ -47,7 +48,21 @@ class ImportCompletedTorrent implements ShouldQueue
 
                 $s3Key = $this->s3Key($torrent, $torrentFile->path);
 
-                Storage::disk('s3')->put($s3Key, Storage::disk('local')->readStream($sourcePath));
+                $sourceStream = Storage::disk('local')->readStream($sourcePath);
+
+                if (! is_resource($sourceStream)) {
+                    throw new FileNotFoundException("Missing completed file [{$torrentFile->path}].");
+                }
+
+                $stored = Storage::disk('s3')->put($s3Key, $sourceStream);
+
+                if (is_resource($sourceStream)) {
+                    fclose($sourceStream);
+                }
+
+                if (! $stored) {
+                    throw new RuntimeException("Unable to store completed file [{$torrentFile->path}] in object storage.");
+                }
 
                 $storedFiles[] = [
                     'torrent_file' => $torrentFile,

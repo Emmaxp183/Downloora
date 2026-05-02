@@ -12,6 +12,9 @@
 </script>
 
 <script lang="ts">
+    import { page, usePoll } from '@inertiajs/svelte';
+    import Clock3 from 'lucide-svelte/icons/clock-3';
+    import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
     import FileRow from '@/components/files/FileRow.svelte';
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
@@ -35,12 +38,12 @@
         size_bytes: number;
         download_url: string;
         stream_url: string;
+        updated_at?: string | null;
     };
 
     let {
         quota,
         activeTorrent,
-        recentTorrents,
         recentFiles,
     }: {
         quota: {
@@ -49,13 +52,18 @@
             remaining_bytes: number;
         };
         activeTorrent: Torrent | null;
-        recentTorrents: Torrent[];
         recentFiles: StoredFile[];
     } = $props();
+
+    const user = $derived(page.props.auth.user);
 
     const formatBytes = (bytes: number | null): string => {
         if (!bytes) {
             return '0 MB';
+        }
+
+        if (bytes >= 1024 * 1024 * 1024) {
+            return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
         }
 
         return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
@@ -63,80 +71,118 @@
 
     const quotaPercent = $derived(
         quota.quota_bytes > 0
-            ? Math.round((quota.used_bytes / quota.quota_bytes) * 100)
+            ? Math.min(
+                  100,
+                  Math.round((quota.used_bytes / quota.quota_bytes) * 100),
+              )
             : 0,
     );
+
+    const { start: startPolling, stop: stopPolling } = usePoll(
+        2000,
+        {
+            only: ['quota', 'activeTorrent', 'recentTorrents', 'recentFiles'],
+        },
+        {
+            autoStart: false,
+        },
+    );
+
+    $effect(() => {
+        if (activeTorrent) {
+            startPolling();
+        } else {
+            stopPolling();
+        }
+    });
 </script>
 
 <AppHead title="Dashboard" />
 
-<div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
-    <div class="grid gap-4 md:grid-cols-3">
-        <div class="rounded-lg border p-4">
-            <p class="text-sm text-muted-foreground">Used</p>
-            <p class="mt-2 text-2xl font-semibold">
-                {formatBytes(quota.used_bytes)}
-            </p>
+<div class="space-y-8">
+    <section
+        class="grid gap-6 border-b border-dashed border-zinc-200 pb-8 lg:grid-cols-[21rem_minmax(0,1fr)] dark:border-zinc-800"
+    >
+        <div class="flex min-w-0 items-center gap-4">
+            <div
+                class="flex size-20 shrink-0 items-center justify-center rounded-full bg-white text-xl font-semibold text-zinc-800 shadow-[0_18px_42px_rgba(24,24,27,0.14)] ring-1 ring-zinc-100 dark:bg-zinc-900 dark:text-white dark:ring-zinc-800"
+            >
+                {user.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                    <p class="truncate text-lg font-bold uppercase">
+                        Non-premium
+                    </p>
+                    <button
+                        type="button"
+                        class="text-sm font-semibold uppercase text-amber-400 underline decoration-amber-300 underline-offset-2"
+                    >
+                        Get more
+                    </button>
+                </div>
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
+                    <div
+                        class="h-full rounded-full bg-emerald-400"
+                        style={`width: ${quotaPercent}%`}
+                    ></div>
+                </div>
+                <p class="mt-2 text-right text-sm font-semibold">
+                    <span class="text-emerald-500"
+                        >{formatBytes(quota.used_bytes)}</span
+                    >
+                    <span class="text-zinc-500">
+                        / {formatBytes(quota.quota_bytes)}</span
+                    >
+                </p>
+            </div>
         </div>
-        <div class="rounded-lg border p-4">
-            <p class="text-sm text-muted-foreground">Remaining</p>
-            <p class="mt-2 text-2xl font-semibold">
-                {formatBytes(quota.remaining_bytes)}
-            </p>
-        </div>
-        <div class="rounded-lg border p-4">
-            <p class="text-sm text-muted-foreground">Quota</p>
-            <p class="mt-2 text-2xl font-semibold">{quotaPercent}%</p>
-        </div>
-    </div>
 
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div class="space-y-4">
+        <div class="flex min-w-0 items-center">
             <TorrentSubmitForm disabled={activeTorrent !== null} />
+        </div>
+    </section>
 
-            {#if activeTorrent}
-                <TorrentProgress torrent={activeTorrent} />
-            {/if}
-
-            <div class="rounded-lg border">
-                <div class="border-b px-4 py-3">
-                    <h2 class="font-medium">Recent torrents</h2>
-                </div>
-                <div class="divide-y">
-                    {#each recentTorrents as torrent (torrent.id)}
-                        <div class="px-4 py-3">
-                            <div class="flex items-center justify-between gap-4">
-                                <p class="truncate text-sm font-medium">
-                                    {torrent.name ?? 'Inspecting torrent'}
-                                </p>
-                                <span class="text-sm tabular-nums"
-                                    >{torrent.progress}%</span
-                                >
-                            </div>
-                            <p class="text-xs capitalize text-muted-foreground">
-                                {torrent.status.replaceAll('_', ' ')}
-                            </p>
-                        </div>
-                    {:else}
-                        <div class="px-4 py-10 text-center text-sm text-muted-foreground">
-                            No torrents yet.
-                        </div>
-                    {/each}
-                </div>
+    <section class="overflow-hidden">
+        <div
+            class="grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 px-4 text-sm font-medium uppercase text-sky-700 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem] dark:border-zinc-800 dark:text-sky-300"
+        >
+            <div class="flex items-center justify-center">
+                <span
+                    class="size-5 rounded border-2 border-zinc-300 dark:border-zinc-700"
+                ></span>
+            </div>
+            <div class="flex items-center gap-6">
+                <span>Name</span>
+                <label
+                    class="hidden h-10 w-full max-w-72 items-center gap-2 border border-zinc-200 bg-white px-3 text-zinc-500 sm:flex dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                    <input
+                        placeholder="Search your files"
+                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-zinc-400"
+                    />
+                    <Search class="size-4" />
+                </label>
+            </div>
+            <div class="text-right sm:text-center"></div>
+            <div class="hidden sm:block">Size</div>
+            <div class="hidden sm:flex sm:items-center sm:gap-2">
+                <Clock3 class="size-4" />
+                Last changed
             </div>
         </div>
 
-        <div class="rounded-lg border">
-            <div class="border-b px-4 py-3">
-                <h2 class="font-medium">Recent files</h2>
+        {#if activeTorrent}
+            <TorrentProgress torrent={activeTorrent} />
+        {/if}
+
+        {#each recentFiles as file (file.id)}
+            <FileRow {file} />
+        {:else}
+            <div class="px-4 py-16 text-center text-sm text-zinc-500">
+                No completed files yet.
             </div>
-            {#each recentFiles as file (file.id)}
-                <FileRow {file} />
-            {:else}
-                <div class="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No completed files yet.
-                </div>
-            {/each}
-        </div>
-    </div>
+        {/each}
+    </section>
+
 </div>

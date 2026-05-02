@@ -43,6 +43,7 @@ class DashboardController extends Controller
                     'mime_type' => $file->mime_type,
                     'download_url' => URL::signedRoute('files.download', $file),
                     'stream_url' => URL::signedRoute('files.stream', $file),
+                    'updated_at' => $file->updated_at?->toIso8601String(),
                 ]),
         ]);
     }

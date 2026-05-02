@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Activity from 'lucide-svelte/icons/activity';
+
     type Torrent = {
         id: number;
         name: string | null;
@@ -13,24 +15,36 @@
 
     const name = $derived(torrent.name ?? 'Inspecting torrent');
     const progress = $derived(Math.min(100, Math.max(0, torrent.progress)));
+    const status = $derived(torrent.status.replaceAll('_', ' '));
 </script>
 
-<div class="rounded-lg border p-4">
-    <div class="flex items-start justify-between gap-4">
-        <div class="min-w-0">
-            <p class="truncate text-sm font-medium">{name}</p>
-            <p class="text-xs capitalize text-muted-foreground">
-                {torrent.status.replaceAll('_', ' ')}
-            </p>
+<div
+    class="grid min-h-20 grid-cols-[minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950"
+>
+    <div class="flex min-w-0 items-center gap-4">
+        <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10"
+        >
+            <Activity class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-4">
+                <p class="truncate text-base font-medium">{name}</p>
+                <span class="text-sm tabular-nums text-zinc-500"
+                    >{progress}%</span
+                >
+            </div>
+            <p class="mt-1 text-xs capitalize text-zinc-500">{status}</p>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100">
+                <div
+                    class="h-full rounded-full bg-indigo-400 transition-[width]"
+                    style={`width: ${progress}%`}
+                ></div>
+            </div>
+            {#if torrent.error_message}
+                <p class="mt-2 text-sm text-red-500">{torrent.error_message}</p>
+            {/if}
         </div>
-        <span class="text-sm tabular-nums">{progress}%</span>
     </div>
-
-    <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-        <div class="h-full bg-primary" style={`width: ${progress}%`}></div>
-    </div>
-
-    {#if torrent.error_message}
-        <p class="mt-3 text-sm text-destructive">{torrent.error_message}</p>
-    {/if}
+    <div class="text-right text-sm font-medium text-indigo-500">Active</div>
 </div>

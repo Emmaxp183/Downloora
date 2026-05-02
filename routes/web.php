@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('files/{storedFile}/stream', [StoredFileAccessController::class, 'stream'])
         ->middleware('signed')
         ->name('files.stream');
+    Route::delete('files/{storedFile}', [StoredFileAccessController::class, 'destroy'])->name('files.destroy');
 });
 
 Route::prefix('admin')

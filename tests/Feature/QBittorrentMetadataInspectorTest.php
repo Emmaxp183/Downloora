@@ -51,15 +51,50 @@ test('it inspects magnet metadata with qbittorrent', function () {
         ->and($metadata->files)->toHaveCount(2);
 
     Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/add'
-        && $request['paused'] === 'true');
+        && $request['paused'] === 'false');
 
     Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/delete'
         && $request['hashes'] === '0123456789abcdef0123456789abcdef01234567');
 });
 
+test('it waits until qbittorrent returns torrent files', function () {
+    config([
+        'torrents.qbittorrent.metadata_poll_attempts' => 2,
+    ]);
+
+    Http::fake([
+        'qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200),
+        'qbittorrent.test/api/v2/torrents/add' => Http::response('Ok.', 200),
+        'qbittorrent.test/api/v2/torrents/info*' => Http::response([[
+            'hash' => '0123456789abcdef0123456789abcdef01234567',
+            'name' => 'Example Torrent',
+            'save_path' => '/downloads/0123456789abcdef0123456789abcdef01234567',
+        ]], 200),
+        'qbittorrent.test/api/v2/torrents/files*' => Http::sequence()
+            ->push([], 200)
+            ->push([
+                ['name' => 'video.mp4', 'size' => 1000],
+            ], 200),
+        'qbittorrent.test/api/v2/torrents/delete' => Http::response('Ok.', 200),
+    ]);
+
+    $torrent = Torrent::factory()
+        ->for(User::factory())
+        ->create([
+            'source_type' => TorrentSourceType::Magnet,
+            'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
+        ]);
+
+    $metadata = app(QBittorrentMetadataInspector::class)->inspect($torrent);
+
+    expect($metadata->files)->toBe([
+        ['path' => 'video.mp4', 'size_bytes' => 1000],
+    ]);
+});
+
 test('it inspects torrent file metadata by matching qbittorrent save path', function () {
-    Storage::fake('local');
-    Storage::disk('local')->put('torrents/example.torrent', 'torrent-bytes');
+    Storage::fake('s3');
+    Storage::disk('s3')->put('torrents/example.torrent', 'torrent-bytes');
 
     Http::fake([
         'qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200),
