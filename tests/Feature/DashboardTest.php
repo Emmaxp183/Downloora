@@ -1,0 +1,52 @@
+<?php
+
+use App\Enums\TorrentStatus;
+use App\Models\StorageUsageEvent;
+use App\Models\StoredFile;
+use App\Models\Torrent;
+use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
+
+test('guests are redirected to the login page', function () {
+    $response = $this->get(route('dashboard'));
+    $response->assertRedirect(route('login'));
+});
+
+test('authenticated users can visit the dashboard', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->get(route('dashboard'));
+    $response->assertOk();
+});
+
+test('dashboard includes quota, active torrent, recent torrents, and recent files', function () {
+    $user = User::factory()->create(['storage_quota_bytes' => 1000]);
+    StorageUsageEvent::factory()->for($user)->create(['delta_bytes' => 250]);
+
+    Torrent::factory()->for($user)->create([
+        'name' => 'Active Torrent',
+        'status' => TorrentStatus::Downloading,
+        'progress' => 42,
+    ]);
+
+    Torrent::factory()->for($user)->create([
+        'name' => 'Completed Torrent',
+        'status' => TorrentStatus::Completed,
+    ]);
+
+    StoredFile::factory()->for($user)->create(['name' => 'video.mp4']);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('quota.used_bytes', 250)
+            ->where('quota.quota_bytes', 1000)
+            ->where('quota.remaining_bytes', 750)
+            ->where('activeTorrent.name', 'Active Torrent')
+            ->has('recentTorrents', 2)
+            ->has('recentFiles', 1)
+        );
+});

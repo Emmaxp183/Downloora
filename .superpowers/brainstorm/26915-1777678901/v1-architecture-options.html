@@ -1,0 +1,91 @@
+<h2>Seedr Clone V1 Architecture Options</h2>
+<p class="subtitle">Pick the deployment shape we should use for the first build.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Recommended: Single Leaseweb Docker Server</h3>
+      <p>Laravel/Inertia, Postgres, Redis, qBittorrent-nox, RustFS, and reverse proxy run on one 10Gbps Leaseweb server.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Fastest to build and deploy.</li>
+            <li>Simple networking between services.</li>
+            <li>Works well for a controlled v1 with 700MB quotas.</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>One server is a single point of failure.</li>
+            <li>Scaling later requires splitting services.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Two-Server Split</h3>
+      <p>Laravel/Postgres/Redis on one server, qBittorrent and RustFS on another storage-heavy server.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Cleaner isolation between app and storage/download load.</li>
+            <li>Easier to upgrade storage separately.</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>More expensive and more moving parts.</li>
+            <li>Private networking, firewalls, and backups are more complex.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Kubernetes / Cluster</h3>
+      <p>Run app, workers, storage, and torrent engine across a managed or self-hosted cluster.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Best long-term scaling path.</li>
+            <li>Better service isolation and automation.</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Too much operational weight for v1.</li>
+            <li>Slows product development before the core workflow is proven.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Recommended V1 Flow</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:stretch;text-align:center">
+      <div class="mock-content">User<br>Inertia UI</div>
+      <div class="mock-content">Laravel<br>App + API</div>
+      <div class="mock-content">Redis<br>Queue</div>
+      <div class="mock-content">qBittorrent<br>Docker</div>
+      <div class="mock-content">RustFS<br>S3</div>
+    </div>
+    <p style="margin-top:16px">Torrent finishes → Laravel imports files into RustFS → torrent is removed from qBittorrent → user downloads or streams from signed app links.</p>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+.git
+.superpowers
+node_modules
+vendor
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+database/database.sqlite
+public/build
+.env
+.env.*
+!.env.example
