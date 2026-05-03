@@ -117,67 +117,69 @@
 <AppHead title="Dashboard" />
 
 <div class="space-y-8">
-    <section
-        class="grid gap-6 border-b border-dashed border-zinc-200 pb-8 lg:grid-cols-[21rem_minmax(0,1fr)] dark:border-zinc-800"
-    >
-        <div class="flex min-w-0 items-center gap-4">
+    <section class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <div
+            class="seedr-card flex min-w-0 items-center gap-4 bg-[var(--seedr-paper)] p-5"
+        >
             <div
-                class="flex size-20 shrink-0 items-center justify-center rounded-full bg-white text-xl font-semibold text-zinc-800 shadow-[0_18px_42px_rgba(24,24,27,0.14)] ring-1 ring-zinc-100 dark:bg-zinc-900 dark:text-white dark:ring-zinc-800"
+                class="flex size-20 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-xl font-black text-[var(--seedr-ink)] shadow-[4px_4px_0_0_var(--foreground)]"
             >
                 {user.name.slice(0, 2).toUpperCase()}
             </div>
             <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-3">
-                    <p class="truncate text-lg font-bold uppercase">
+                    <p class="truncate text-lg font-black uppercase">
                         Non-premium
                     </p>
                     <button
                         type="button"
                         onclick={() => (planDialogOpen = true)}
-                        class="text-sm font-semibold uppercase text-amber-400 underline decoration-amber-300 underline-offset-2"
+                        class="text-sm font-black uppercase text-[var(--seedr-orange)] underline decoration-2 underline-offset-4 hover:text-[var(--seedr-green)]"
                     >
                         Get more
                     </button>
                 </div>
-                <div class="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
+                <div class="seedr-progress mt-3 bg-background">
                     <div
-                        class="h-full rounded-full bg-emerald-400"
+                        class="seedr-progress-fill"
                         style={`width: ${quotaPercent}%`}
                     ></div>
                 </div>
                 <p class="mt-2 text-right text-sm font-semibold">
-                    <span class="text-emerald-500"
+                    <span class="text-[var(--seedr-green)]"
                         >{formatBytes(quota.used_bytes)}</span
                     >
-                    <span class="text-zinc-500">
+                    <span class="text-muted-foreground">
                         / {formatBytes(quota.quota_bytes)}</span
                     >
                 </p>
             </div>
         </div>
 
-        <div class="flex min-w-0 items-center">
+        <div
+            class="seedr-card flex min-w-0 items-center bg-[var(--seedr-paper)] p-4"
+        >
             <TorrentSubmitForm disabled={activeTorrent !== null} />
         </div>
     </section>
 
-    <section class="overflow-hidden">
+    <section class="space-y-4 overflow-hidden">
         <div
-            class="grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 px-4 text-sm font-medium uppercase text-sky-700 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem] dark:border-zinc-800 dark:text-sky-300"
+            class="seedr-table-head grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 text-sm font-black uppercase sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
         >
             <div class="flex items-center justify-center">
                 <span
-                    class="size-5 rounded border-2 border-zinc-300 dark:border-zinc-700"
+                    class="size-5 rounded border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)]"
                 ></span>
             </div>
             <div class="flex items-center gap-6">
                 <span>Name</span>
                 <label
-                    class="hidden h-10 w-full max-w-72 items-center gap-2 border border-zinc-200 bg-white px-3 text-zinc-500 sm:flex dark:border-zinc-800 dark:bg-zinc-900"
+                    class="hidden h-10 w-full max-w-72 items-center gap-2 rounded-full border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)] px-3 text-[var(--seedr-ink)] sm:flex"
                 >
                     <input
                         placeholder="Search your files"
-                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-zinc-400"
+                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-[var(--seedr-ink)]/50"
                     />
                     <Search class="size-4" />
                 </label>

@@ -47,7 +47,7 @@
 
 <h1 class="sr-only">Security settings</h1>
 
-<div class="space-y-6">
+<div class="seedr-card space-y-6 bg-card p-5">
     <Heading
         variant="small"
         title="Update password"
@@ -112,7 +112,7 @@
 </div>
 
 {#if canManageTwoFactor}
-    <div class="space-y-6">
+    <div class="seedr-card space-y-6 bg-card p-5">
         <Heading
             variant="small"
             title="Two-factor authentication"
@@ -121,7 +121,7 @@
 
         {#if !twoFactorEnabled}
             <div class="flex flex-col items-start justify-start space-y-4">
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm font-medium text-muted-foreground">
                     When you enable two-factor authentication, you will be
                     prompted for a secure pin during login. This pin can be
                     retrieved from a TOTP-supported application on your phone.
@@ -148,7 +148,7 @@
             </div>
         {:else}
             <div class="flex flex-col items-start justify-start space-y-4">
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm font-medium text-muted-foreground">
                     You will be prompted for a secure, random pin during login,
                     which you can retrieve from the TOTP-supported application
                     on your phone.

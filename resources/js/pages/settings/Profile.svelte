@@ -39,7 +39,7 @@
 
 <h1 class="sr-only">Profile settings</h1>
 
-<div class="flex flex-col space-y-6">
+<div class="seedr-card flex flex-col gap-6 bg-card p-5">
     <Heading
         variant="small"
         title="Profile information"
@@ -83,7 +83,7 @@
 
             {#if mustVerifyEmail && !user.email_verified_at}
                 <div>
-                    <p class="-mt-4 text-sm text-muted-foreground">
+                    <p class="-mt-4 text-sm font-medium text-muted-foreground">
                         Your email address is unverified.
                         <TextLink href={send()} as="button">
                             Click here to resend the verification email.
@@ -91,7 +91,9 @@
                     </p>
 
                     {#if status === 'verification-link-sent'}
-                        <div class="mt-2 text-sm font-medium text-green-600">
+                        <div
+                            class="mt-2 text-sm font-bold text-[var(--seedr-green)]"
+                        >
                             A new verification link has been sent to your email
                             address.
                         </div>

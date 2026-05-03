@@ -32,10 +32,10 @@
     {#snippet children({ errors, processing, progress, submit })}
         <div class="flex w-full items-stretch gap-3">
             <div
-                class="group flex min-h-14 min-w-0 flex-1 overflow-hidden border border-zinc-100 bg-zinc-50 shadow-[0_16px_34px_rgba(24,24,27,0.04)] transition focus-within:border-indigo-200 focus-within:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-indigo-500/40"
+                class="group flex min-h-14 min-w-0 flex-1 overflow-hidden rounded-full border-2 border-foreground bg-card shadow-[3px_3px_0_0_var(--foreground)] transition focus-within:bg-[var(--seedr-paper)]"
             >
                 <div
-                    class="flex w-14 shrink-0 items-center justify-center text-zinc-400"
+                    class="flex w-14 shrink-0 items-center justify-center text-muted-foreground"
                 >
                     <Link2 class="size-5" />
                 </div>
@@ -44,13 +44,13 @@
                     name="magnet_uri"
                     placeholder="Paste magnet link URL here"
                     disabled={disabled || processing}
-                    class="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     autocomplete="off"
                 />
                 <button
                     type="submit"
                     disabled={disabled || processing}
-                    class="flex w-16 shrink-0 items-center justify-center bg-zinc-100 text-zinc-950 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+                    class="flex w-16 shrink-0 items-center justify-center border-l-2 border-foreground bg-[var(--seedr-orange)] text-[var(--seedr-ink)] transition hover:bg-[var(--seedr-lime)] disabled:cursor-not-allowed disabled:opacity-50"
                     title="Add magnet"
                 >
                     <Plus class="size-7 stroke-[3]" />
@@ -71,27 +71,31 @@
                 type="button"
                 disabled={disabled || processing}
                 onclick={chooseTorrentFile}
-                class="relative flex min-h-14 w-14 shrink-0 items-center justify-center text-zinc-950 transition hover:text-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white dark:hover:text-indigo-300"
+                class="seedr-icon-button relative min-h-14 w-14 shrink-0 bg-[var(--seedr-lime)] text-[var(--seedr-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 title="Upload torrent file"
             >
                 <Upload class="size-7 stroke-[3]" />
                 <span
-                    class="absolute inset-x-2 bottom-0 h-1 rounded-full bg-indigo-400"
+                    class="absolute inset-x-2 bottom-1 h-1 rounded-full bg-[var(--seedr-green)]"
                     class:opacity-0={!processing}
                 ></span>
             </button>
         </div>
 
         {#if errors.magnet_uri}
-            <p class="mt-2 text-sm text-red-500">{errors.magnet_uri}</p>
+            <p class="mt-2 text-sm font-semibold text-destructive">
+                {errors.magnet_uri}
+            </p>
         {:else if errors.torrent_file}
-            <p class="mt-2 text-sm text-red-500">{errors.torrent_file}</p>
+            <p class="mt-2 text-sm font-semibold text-destructive">
+                {errors.torrent_file}
+            </p>
         {:else if progress}
-            <p class="mt-2 text-sm text-zinc-500">
+            <p class="mt-2 text-sm font-medium text-muted-foreground">
                 Uploading torrent file {progress.percentage}%.
             </p>
         {:else if disabled}
-            <p class="mt-2 text-sm text-zinc-500">
+            <p class="mt-2 text-sm font-medium text-muted-foreground">
                 Finish or cancel your active torrent before adding another.
             </p>
         {/if}

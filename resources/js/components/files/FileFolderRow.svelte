@@ -58,12 +58,12 @@
 
 <div>
     <div
-        class="grid min-h-20 w-full grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 bg-white px-4 text-zinc-900 transition hover:bg-zinc-50/80 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem] dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900/70"
+        class="seedr-row grid min-h-20 w-full grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
     >
         <button
             type="button"
             onclick={() => (expanded = !expanded)}
-            class="flex size-10 shrink-0 items-center justify-center text-amber-400"
+            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[2px_2px_0_0_var(--foreground)]"
             aria-expanded={expanded}
             title={expanded ? 'Close folder' : 'Open folder'}
         >
@@ -79,14 +79,17 @@
             <span class="block truncate text-base font-medium">
                 {folder.name}
             </span>
-            <span class="block truncate text-xs text-zinc-500">{count}</span>
+            <span
+                class="block truncate text-xs font-medium text-muted-foreground"
+                >{count}</span
+            >
         </button>
 
         <span class="flex items-center justify-end gap-2 sm:justify-center">
             {#if folder.download_url}
                 <a
                     href={folder.download_url}
-                    class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-indigo-50 hover:text-indigo-500 dark:bg-zinc-900 dark:hover:bg-indigo-950"
+                    class="seedr-icon-button"
                     title="Download folder as zip"
                 >
                     <Download class="size-4" />
@@ -97,7 +100,7 @@
                 <button
                     type="button"
                     onclick={() => (deleteDialogOpen = true)}
-                    class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
+                    class="seedr-icon-button seedr-danger"
                     title="Delete folder"
                 >
                     <X class="size-4" />
@@ -107,25 +110,25 @@
             <button
                 type="button"
                 onclick={() => (expanded = !expanded)}
-                class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                class="seedr-icon-button"
                 aria-expanded={expanded}
                 title={expanded ? 'Close folder' : 'Open folder'}
             >
                 <ChevronRight
-                    class={`size-5 text-zinc-400 transition-transform ${expanded ? 'rotate-90' : ''}`}
+                    class={`size-5 transition-transform ${expanded ? 'rotate-90' : ''}`}
                 />
             </button>
         </span>
 
         <span class="hidden text-base tabular-nums sm:block">{size}</span>
 
-        <span class="hidden text-base text-zinc-700 sm:block dark:text-zinc-300">
+        <span class="hidden text-base text-muted-foreground sm:block">
             {changed}
         </span>
     </div>
 
     {#if expanded}
-        <div class="border-b border-zinc-100 pl-6 dark:border-zinc-800">
+        <div class="mt-3 space-y-3 pl-6">
             {#each folder.files as file (file.id)}
                 <FileRow {file} />
             {/each}

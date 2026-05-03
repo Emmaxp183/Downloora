@@ -35,26 +35,28 @@
     const url = currentUrlState();
 </script>
 
-<div class="px-4 py-6">
+<div class="seedr-card bg-[var(--seedr-paper)] p-5 sm:p-6">
     <Heading
         title="Settings"
         description="Manage your profile and account settings"
     />
 
-    <div class="flex flex-col lg:flex-row lg:space-x-12">
-        <aside class="w-full max-w-xl lg:w-48">
+    <div class="flex flex-col gap-8 lg:flex-row">
+        <aside class="w-full max-w-xl lg:w-56">
             <nav
-                class="flex flex-col space-y-1 space-x-0"
+                class="flex flex-col gap-2"
                 aria-label="Settings"
             >
                 {#each sidebarNavItems as item (toUrl(item.href))}
                     <Button
-                        variant="ghost"
+                        variant={url.isCurrentUrl(item.href, url.currentUrl)
+                            ? 'secondary'
+                            : 'outline'}
                         class="w-full justify-start {url.isCurrentUrl(
                             item.href,
                             url.currentUrl,
                         )
-                            ? 'bg-muted'
+                            ? ''
                             : ''}"
                         asChild
                     >
@@ -68,7 +70,7 @@
             </nav>
         </aside>
 
-        <Separator class="my-6 lg:hidden" />
+        <Separator class="my-1 lg:hidden" />
 
         <div class="flex-1 md:max-w-2xl">
             <section class="max-w-xl space-y-12">

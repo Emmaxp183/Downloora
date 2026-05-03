@@ -17,18 +17,18 @@
     import { Label } from '@/components/ui/label';
 </script>
 
-<div class="space-y-6">
+<div class="seedr-card space-y-6 bg-card p-5">
     <Heading
         variant="small"
         title="Delete account"
         description="Delete your account and all of its resources"
     />
     <div
-        class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
+        class="space-y-4 rounded-[1.25rem] border-2 border-[var(--seedr-danger)] bg-[var(--seedr-danger)]/10 p-4"
     >
-        <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
-            <p class="font-medium">Warning</p>
-            <p class="text-sm">
+        <div class="relative space-y-0.5 text-destructive">
+            <p class="font-black">Warning</p>
+            <p class="text-sm font-medium">
                 Please proceed with caution, this cannot be undone.
             </p>
         </div>

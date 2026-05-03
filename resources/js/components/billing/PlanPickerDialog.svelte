@@ -44,7 +44,7 @@
             description: 'Perfect for steady weekend use',
             price: '6.95',
             icon: Flame,
-            iconClass: 'text-orange-400',
+            iconClass: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
         },
         {
             id: 'pro',
@@ -53,7 +53,7 @@
             description: 'Perfect for large libraries & advanced networks',
             price: '9.95',
             icon: Sprout,
-            iconClass: 'text-emerald-400',
+            iconClass: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
             popular: true,
         },
         {
@@ -63,21 +63,19 @@
             description: 'Perfect for power users & hoarders',
             price: '19.95',
             icon: Cloud,
-            iconClass: 'text-violet-400',
+            iconClass: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
         },
     ];
 </script>
 
 <Dialog bind:open>
-    <DialogContent
-        class="max-h-[92vh] max-w-3xl overflow-y-auto rounded-3xl border-zinc-200 bg-white p-0 text-[#142b65] shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-    >
+    <DialogContent class="max-h-[92vh] max-w-3xl overflow-y-auto p-0">
         <div
-            class="flex items-center justify-between border-b border-zinc-200 px-6 py-5 dark:border-zinc-800 sm:px-8"
+            class="flex items-center justify-between border-b-2 border-foreground px-6 py-5 sm:px-8"
         >
             <div>
                 <DialogTitle
-                    class="text-3xl font-medium tracking-normal sm:text-4xl"
+                    class="text-3xl font-black tracking-tight sm:text-4xl"
                 >
                     Choose your plan
                 </DialogTitle>
@@ -88,7 +86,7 @@
             <button
                 type="button"
                 onclick={() => (open = false)}
-                class="flex size-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                class="seedr-icon-button"
                 title="Close"
             >
                 <X class="size-5" />
@@ -97,7 +95,7 @@
 
         <div class="space-y-6 px-6 py-6 sm:px-8">
             <p
-                class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400"
+                class="text-sm font-black uppercase tracking-[0.18em] text-[var(--seedr-green)]"
             >
                 Available plans
             </p>
@@ -108,25 +106,23 @@
                         type="button"
                         onclick={() => (selectedPlan = plan.id)}
                         class={cn(
-                            'relative grid w-full grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 rounded-2xl border-2 border-zinc-200 bg-white p-4 text-left transition hover:border-blue-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-blue-500/60 sm:grid-cols-[5rem_minmax(0,1fr)_8rem]',
+                            'relative grid w-full grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 rounded-[1.25rem] border-2 border-foreground bg-card p-4 text-left shadow-[3px_3px_0_0_var(--foreground)] transition hover:-translate-y-0.5 hover:bg-muted sm:grid-cols-[5rem_minmax(0,1fr)_8rem]',
                             selectedPlan === plan.id &&
-                                'border-blue-500 bg-blue-50/60 shadow-[0_18px_48px_rgba(37,99,235,0.13)] dark:border-blue-400 dark:bg-blue-950/20',
+                                'bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[6px_6px_0_0_var(--foreground)]',
                         )}
                     >
                         {#if plan.popular}
                             <span
-                                class="absolute -top-4 left-6 rounded-full bg-violet-600 px-4 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-white"
+                                class="absolute -top-4 left-6 rounded-full border-2 border-foreground bg-[var(--seedr-purple)] px-4 py-1 text-xs font-black uppercase tracking-[0.08em] text-[var(--seedr-paper)]"
                             >
                                 Most popular
                             </span>
                         {/if}
 
                         <span
-                            class="flex size-16 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100 dark:bg-zinc-900 dark:ring-zinc-800"
+                            class={`flex size-16 items-center justify-center rounded-2xl border-2 border-foreground shadow-[2px_2px_0_0_var(--foreground)] ${plan.iconClass}`}
                         >
-                            <plan.icon
-                                class={`size-8 stroke-[1.7] ${plan.iconClass}`}
-                            />
+                            <plan.icon class="size-8 stroke-[1.7]" />
                         </span>
 
                         <span class="min-w-0">
@@ -135,18 +131,13 @@
                                     >{plan.name}</span
                                 >
                                 <span
-                                    class={cn(
-                                        'rounded-full px-3 py-1 text-sm font-medium',
-                                        plan.id === 'pro'
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-zinc-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-200',
-                                    )}
+                                    class="rounded-full border border-foreground bg-card px-3 py-1 text-sm font-bold"
                                 >
                                     {plan.quota}
                                 </span>
                             </span>
                             <span
-                                class="mt-2 block truncate text-base text-slate-500 dark:text-zinc-400"
+                                class="mt-2 block truncate text-base font-medium text-muted-foreground"
                             >
                                 {plan.description}
                             </span>
@@ -160,7 +151,7 @@
                                 >{plan.price}
                             </span>
                             <span
-                                class="block text-sm text-slate-500 dark:text-zinc-400"
+                                class="block text-sm font-medium text-muted-foreground"
                             >
                                 per month
                             </span>
@@ -172,13 +163,13 @@
             <button
                 type="button"
                 onclick={() => (billYearly = !billYearly)}
-                class="flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-zinc-200 bg-white p-4 text-left dark:border-zinc-800 dark:bg-zinc-950"
+                class="flex w-full items-center justify-between gap-4 rounded-[1.25rem] border-2 border-foreground bg-card p-4 text-left shadow-[3px_3px_0_0_var(--foreground)]"
                 aria-pressed={billYearly}
             >
                 <span>
-                    <span class="block text-xl font-medium">Bill yearly</span>
+                    <span class="block text-xl font-black">Bill yearly</span>
                     <span
-                        class="mt-1 flex items-center gap-2 text-base font-medium text-emerald-500"
+                        class="mt-1 flex items-center gap-2 text-base font-bold text-[var(--seedr-green)]"
                     >
                         <Check class="size-5" />
                         Save €19.90 per year
@@ -188,41 +179,47 @@
                     class={cn(
                         'flex h-9 w-16 items-center rounded-full p-1 transition',
                         billYearly
-                            ? 'justify-end bg-blue-500'
-                            : 'justify-start bg-slate-300 dark:bg-zinc-700',
+                            ? 'justify-end border-2 border-foreground bg-[var(--seedr-lime)]'
+                            : 'justify-start border-2 border-foreground bg-muted',
                     )}
                 >
-                    <span class="size-7 rounded-full bg-white shadow-sm"></span>
+                    <span
+                        class="size-7 rounded-full border border-foreground bg-card shadow-sm"
+                    ></span>
                 </span>
             </button>
 
             <div
-                class="flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-zinc-400"
+                class="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-muted-foreground"
             >
-                <Star class="size-5 fill-amber-400 text-amber-400" />
+                <Star
+                    class="size-5 fill-[var(--seedr-orange)] text-[var(--seedr-orange)]"
+                />
                 <span>Risk-Free</span>
-                <span class="text-zinc-300 dark:text-zinc-700">|</span>
+                <span>|</span>
                 <span>7-Day or 20GB</span>
-                <span class="text-zinc-300 dark:text-zinc-700">|</span>
+                <span>|</span>
                 <span>Money-Back Guarantee</span>
             </div>
 
             <button
                 type="button"
                 onclick={() => (open = false)}
-                class="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-blue-600 px-6 text-xl font-medium text-white shadow-[0_18px_42px_rgba(37,99,235,0.24)] transition hover:bg-blue-700"
+                class="seedr-button flex min-h-14 w-full text-xl"
             >
                 Continue
                 <ArrowRight class="size-6" />
             </button>
 
-            <p
-                class="text-center text-sm leading-6 text-slate-500 dark:text-zinc-400"
-            >
+            <p class="text-center text-sm leading-6 text-muted-foreground">
                 By clicking continue you agree to Seedr's
-                <span class="text-blue-500">Terms of Service</span>
+                <span class="font-semibold text-[var(--seedr-green)]"
+                    >Terms of Service</span
+                >
                 and
-                <span class="text-blue-500">Privacy Policy</span>.
+                <span class="font-semibold text-[var(--seedr-green)]"
+                    >Privacy Policy</span
+                >.
             </p>
         </div>
     </DialogContent>

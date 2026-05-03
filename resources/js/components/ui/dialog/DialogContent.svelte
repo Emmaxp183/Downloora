@@ -15,13 +15,13 @@
     <div class="fixed inset-0 z-50 flex items-center justify-center">
         <button
             type="button"
-            class="fixed inset-0 bg-black/50"
+            class="fixed inset-0 bg-[var(--seedr-ink)]/55"
             aria-label="Close"
             onclick={close}
         ></button>
         <div
             class={cn(
-                'relative z-10 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg',
+                'relative z-10 w-[calc(100%-2rem)] max-w-lg rounded-[1.5rem] border-2 border-foreground bg-card p-6 text-card-foreground shadow-[8px_8px_0_0_var(--foreground)]',
                 className,
             )}
             role="dialog"

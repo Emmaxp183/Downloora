@@ -30,30 +30,37 @@
 </script>
 
 <div
-    class="grid min-h-20 grid-cols-[minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950"
+    class="seedr-row grid min-h-20 grid-cols-[minmax(0,1fr)_7rem] items-center gap-4 px-4"
 >
     <div class="flex min-w-0 items-center gap-4">
         <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10"
+            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-purple)] text-[var(--seedr-paper)]"
         >
             <Activity class="size-5" />
         </span>
         <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-4">
                 <p class="truncate text-base font-medium">{name}</p>
-                <span class="text-sm tabular-nums text-zinc-500"
+                <span
+                    class="text-sm font-bold tabular-nums text-muted-foreground"
                     >{progress}%</span
                 >
             </div>
-            <p class="mt-1 text-xs capitalize text-zinc-500">{status}</p>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100">
+            <p
+                class="mt-1 text-xs font-medium capitalize text-muted-foreground"
+            >
+                {status}
+            </p>
+            <div class="seedr-progress mt-2">
                 <div
-                    class="h-full rounded-full bg-indigo-400 transition-[width]"
+                    class="seedr-progress-fill"
                     style={`width: ${progress}%`}
                 ></div>
             </div>
             {#if torrent.error_message}
-                <p class="mt-2 text-sm text-red-500">{torrent.error_message}</p>
+                <p class="mt-2 text-sm font-semibold text-destructive">
+                    {torrent.error_message}
+                </p>
             {/if}
         </div>
     </div>
@@ -61,7 +68,7 @@
         <button
             type="button"
             onclick={cancelDownload}
-            class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
+            class="seedr-icon-button seedr-danger"
             title="Cancel download"
         >
             <X class="size-4" />

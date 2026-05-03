@@ -17,24 +17,26 @@
     };
 
     const base =
-        'inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+        'inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
     const variants: Record<Variant, string> = {
-        default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
+        default:
+            'bg-[var(--seedr-orange)] text-[var(--seedr-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
         secondary:
-            'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+            'bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
+        ghost: 'border-transparent hover:border-foreground hover:bg-muted',
         destructive:
-            'bg-destructive text-destructive-foreground shadow hover:bg-destructive/90',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+            'border-[var(--seedr-danger)] bg-[var(--seedr-danger)] text-white shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
+        outline:
+            'bg-card text-foreground shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-muted hover:shadow-[1px_1px_0_0_var(--foreground)]',
+        link: 'border-transparent text-primary underline-offset-4 hover:underline',
     };
 
     const sizes: Record<Size, string> = {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
+        default: 'min-h-10 px-5 py-2',
+        sm: 'min-h-9 px-4 py-1.5 text-xs',
+        lg: 'min-h-12 px-8 py-3 text-base',
+        icon: 'size-10 p-0',
     };
 
     let {

@@ -169,17 +169,17 @@
     );
     const iconColor = $derived(
         {
-            archive: 'text-orange-400',
-            audio: 'text-violet-400',
-            code: 'text-sky-400',
-            document: 'text-red-400',
-            ebook: 'text-amber-400',
-            image: 'text-emerald-400',
-            json: 'text-lime-400',
-            spreadsheet: 'text-green-400',
-            text: 'text-blue-400',
-            unknown: 'text-zinc-400',
-            video: 'text-rose-400',
+            archive: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
+            audio: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
+            code: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
+            document: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
+            ebook: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
+            image: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
+            json: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
+            spreadsheet: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
+            text: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
+            unknown: 'bg-muted text-foreground',
+            video: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
         }[iconKind],
     );
 
@@ -187,10 +187,10 @@
 </script>
 
 <div
-    class="grid min-h-20 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 border-b border-zinc-100 bg-white px-4 text-zinc-900 transition hover:bg-zinc-50/80 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem] dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900/70"
+    class="seedr-row grid min-h-20 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
 >
     <span
-        class={`flex size-10 shrink-0 items-center justify-center ${iconColor}`}
+        class={`flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground shadow-[2px_2px_0_0_var(--foreground)] ${iconColor}`}
     >
         {#if iconKind === 'archive'}
             <FileArchive class="size-6 stroke-[1.7]" />
@@ -219,15 +219,13 @@
 
     <div class="min-w-0">
         <p class="truncate text-base font-medium">{file.name}</p>
-        <p class="truncate text-xs text-zinc-500">{file.original_path}</p>
+        <p class="truncate text-xs font-medium text-muted-foreground">
+            {file.original_path}
+        </p>
     </div>
 
     <div class="flex items-center justify-end gap-2 sm:justify-center">
-        <a
-            href={file.download_url}
-            class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-indigo-50 hover:text-indigo-500 dark:bg-zinc-900 dark:hover:bg-indigo-950"
-            title="Download"
-        >
+        <a href={file.download_url} class="seedr-icon-button" title="Download">
             <Download class="size-4" />
         </a>
 
@@ -235,7 +233,7 @@
             <a
                 href={file.stream_url}
                 target="_blank"
-                class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-indigo-50 hover:text-indigo-500 dark:bg-zinc-900 dark:hover:bg-indigo-950"
+                class="seedr-icon-button"
                 title="Stream"
             >
                 <Play class="size-4" />
@@ -245,7 +243,7 @@
         <button
             type="button"
             onclick={() => (deleteDialogOpen = true)}
-            class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
+            class="seedr-icon-button seedr-danger"
             title="Delete"
         >
             <X class="size-4" />
@@ -254,7 +252,7 @@
 
     <div class="hidden text-base tabular-nums sm:block">{size}</div>
 
-    <div class="hidden text-base text-zinc-700 sm:block dark:text-zinc-300">
+    <div class="hidden text-base text-muted-foreground sm:block">
         {changed}
     </div>
 </div>

@@ -36,37 +36,52 @@
 
 <AppHead title="Admin torrents" />
 
-<div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
-    <div>
-        <h1 class="text-2xl font-semibold tracking-normal">Torrents</h1>
-        <p class="text-sm text-muted-foreground">Review active, failed, and completed torrent jobs.</p>
+<div class="flex h-full flex-1 flex-col gap-5 overflow-x-auto">
+    <div class="seedr-card bg-[var(--seedr-paper)] p-5">
+        <h1 class="text-3xl font-black tracking-tight">Torrents</h1>
+        <p class="text-sm font-medium text-muted-foreground">
+            Review active, failed, and completed torrent jobs.
+        </p>
     </div>
 
-    <div class="overflow-hidden rounded-lg border">
+    <div class="space-y-4">
         {#each torrents as torrent (torrent.id)}
-            <div class="grid gap-3 border-b p-4 lg:grid-cols-[minmax(0,1fr)_10rem]">
+            <div
+                class="seedr-row grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_10rem]"
+            >
                 <div class="min-w-0">
-                    <p class="truncate text-sm font-medium">
+                    <p class="truncate text-base font-bold">
                         {torrent.name ?? 'Inspecting torrent'}
                     </p>
-                    <p class="text-xs text-muted-foreground">
-                        {torrent.user.name} · {torrent.status.replaceAll('_', ' ')} · {torrent.progress}%
+                    <p class="text-xs font-medium text-muted-foreground">
+                        {torrent.user.name} · {torrent.status.replaceAll(
+                            '_',
+                            ' ',
+                        )} · {torrent.progress}%
                     </p>
                     {#if torrent.error_message}
-                        <p class="mt-1 text-xs text-destructive">{torrent.error_message}</p>
+                        <p class="mt-1 text-xs font-semibold text-destructive">
+                            {torrent.error_message}
+                        </p>
                     {/if}
                 </div>
 
                 <Form {...destroy.form(torrent.id)}>
                     {#snippet children({ processing })}
-                        <Button type="submit" variant="outline" disabled={processing}>
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={processing}
+                        >
                             Cancel
                         </Button>
                     {/snippet}
                 </Form>
             </div>
         {:else}
-            <div class="px-4 py-10 text-center text-sm text-muted-foreground">
+            <div
+                class="seedr-card px-4 py-10 text-center text-sm text-muted-foreground"
+            >
                 No torrents found.
             </div>
         {/each}
