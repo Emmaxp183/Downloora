@@ -16,6 +16,7 @@
     import Clock3 from 'lucide-svelte/icons/clock-3';
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
+    import PlanPickerDialog from '@/components/billing/PlanPickerDialog.svelte';
     import FileFolderRow from '@/components/files/FileFolderRow.svelte';
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
     import TorrentSubmitForm from '@/components/torrents/TorrentSubmitForm.svelte';
@@ -66,6 +67,7 @@
     } = $props();
 
     const user = $derived(page.props.auth.user);
+    let planDialogOpen = $state(false);
 
     const formatBytes = (bytes: number | null): string => {
         if (!bytes) {
@@ -131,6 +133,7 @@
                     </p>
                     <button
                         type="button"
+                        onclick={() => (planDialogOpen = true)}
                         class="text-sm font-semibold uppercase text-amber-400 underline decoration-amber-300 underline-offset-2"
                     >
                         Get more
@@ -199,5 +202,6 @@
             </div>
         {/each}
     </section>
-
 </div>
+
+<PlanPickerDialog bind:open={planDialogOpen} />

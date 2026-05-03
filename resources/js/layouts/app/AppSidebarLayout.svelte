@@ -103,35 +103,10 @@
                 </span>
             </Link>
 
-            <nav
-                class="absolute left-1/2 hidden -translate-x-1/2 items-center justify-center gap-2 sm:flex"
-            >
-                {#each navItems as item (toUrl(item.href))}
-                    <Link
-                        href={toUrl(item.href)}
-                        title={item.title}
-                        class={cn(
-                            'group relative flex size-11 items-center justify-center text-zinc-500 transition hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white',
-                            url.isCurrentUrl(item.href, url.currentUrl) &&
-                                'text-zinc-950 dark:text-white',
-                        )}
-                    >
-                        {#if item.icon}
-                            <item.icon class="size-5" />
-                        {/if}
-                        <span
-                            class="absolute inset-x-2 -bottom-3 h-1 rounded-full bg-indigo-400 opacity-0 transition group-hover:opacity-40"
-                            class:opacity-100={url.isCurrentUrl(
-                                item.href,
-                                url.currentUrl,
-                            )}
-                        ></span>
-                    </Link>
-                {/each}
-            </nav>
-
             <div class="ml-auto">
-                <nav class="mr-3 flex items-center justify-center gap-1 sm:hidden">
+                <nav
+                    class="mr-3 flex items-center justify-center gap-1 sm:hidden"
+                >
                     {#each navItems as item (toUrl(item.href))}
                         <Link
                             href={toUrl(item.href)}

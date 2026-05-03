@@ -28,14 +28,7 @@
     };
 </script>
 
-<Form
-    {...store.form()}
-    resetOnSuccess
-    options={{
-        forceFormData: true,
-    }}
-    class="w-full"
->
+<Form {...store.form()} resetOnSuccess class="w-full">
     {#snippet children({ errors, processing, progress, submit })}
         <div class="flex w-full items-stretch gap-3">
             <div

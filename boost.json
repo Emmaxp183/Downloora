@@ -11,8 +11,10 @@
     "nightwatch": false,
     "sail": false,
     "skills": [
+        "cashier-stripe-development",
         "fortify-development",
         "laravel-best-practices",
+        "socialite-development",
         "wayfinder-development",
         "pest-testing",
         "inertia-svelte-development",

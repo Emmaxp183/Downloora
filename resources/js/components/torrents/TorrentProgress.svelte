@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { router } from '@inertiajs/svelte';
     import Activity from 'lucide-svelte/icons/activity';
     import X from 'lucide-svelte/icons/x';
     import { destroy } from '@/actions/App/Http/Controllers/TorrentController';
@@ -20,9 +20,11 @@
     const progress = $derived(Math.min(100, Math.max(0, torrent.progress)));
     const status = $derived(torrent.status.replaceAll('_', ' '));
 
-    const confirmCancel = (event: MouseEvent): void => {
-        if (!confirm(`Cancel ${name}?`)) {
-            event.preventDefault();
+    const cancelDownload = (): void => {
+        if (confirm(`Cancel ${name}?`)) {
+            router.delete(destroy.url(torrent.id), {
+                preserveScroll: true,
+            });
         }
     };
 </script>
@@ -56,16 +58,13 @@
         </div>
     </div>
     <div class="flex justify-end">
-        <Link
-            href={destroy(torrent.id)}
-            as="button"
+        <button
             type="button"
-            preserveScroll
-            onclick={confirmCancel}
+            onclick={cancelDownload}
             class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
             title="Cancel download"
         >
             <X class="size-4" />
-        </Link>
+        </button>
     </div>
 </div>

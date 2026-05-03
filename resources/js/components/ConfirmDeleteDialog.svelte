@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
+    import type { FormComponentProps } from '@inertiajs/core';
     import Button from '@/components/ui/button/Button.svelte';
     import {
         Dialog,
@@ -10,10 +11,7 @@
         DialogTitle,
     } from '@/components/ui/dialog';
 
-    type FormDefinition = {
-        action: string;
-        method: string;
-    };
+    type FormDefinition = Pick<FormComponentProps, 'action' | 'method'>;
 
     let {
         open = $bindable(false),
