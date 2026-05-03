@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,6 +56,10 @@ class TorrentFolderAccessController extends Controller
 
         foreach ($files as $file) {
             $file->s3Disk()->delete($file->s3_key);
+        }
+
+        if (filled($torrent->torrent_file_path)) {
+            Storage::delete($torrent->torrent_file_path);
         }
 
         DB::transaction(function () use ($request, $torrent, $files, $deletedBytes): void {

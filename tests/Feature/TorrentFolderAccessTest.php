@@ -68,7 +68,10 @@ test('owners can delete torrent folders and all contained files', function () {
     Storage::fake('s3');
 
     $user = User::factory()->create();
-    $torrent = Torrent::factory()->for($user)->create(['name' => 'Example Folder']);
+    $torrent = Torrent::factory()->for($user)->create([
+        'name' => 'Example Folder',
+        'torrent_file_path' => 'torrents/uploaded-source.torrent',
+    ]);
 
     $firstFile = StoredFile::factory()->for($user)->for($torrent)->create([
         's3_disk' => 's3',
@@ -84,6 +87,7 @@ test('owners can delete torrent folders and all contained files', function () {
 
     Storage::disk('s3')->put($firstFile->s3_key, 'one');
     Storage::disk('s3')->put($secondFile->s3_key, 'two');
+    Storage::disk('s3')->put($torrent->torrent_file_path, 'torrent-bytes');
 
     $this->actingAs($user)
         ->delete(route('folders.destroy', $torrent))
@@ -93,6 +97,7 @@ test('owners can delete torrent folders and all contained files', function () {
     $this->assertModelMissing($secondFile);
     Storage::disk('s3')->assertMissing($firstFile->s3_key);
     Storage::disk('s3')->assertMissing($secondFile->s3_key);
+    Storage::disk('s3')->assertMissing($torrent->torrent_file_path);
 
     expect(StorageUsageEvent::query()->latest()->first())
         ->user_id->toBe($user->id)
