@@ -15,7 +15,7 @@
     import Clock3 from 'lucide-svelte/icons/clock-3';
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
-    import FileRow from '@/components/files/FileRow.svelte';
+    import FileFolderRow from '@/components/files/FileFolderRow.svelte';
 
     type StoredFile = {
         id: number;
@@ -28,16 +28,26 @@
         updated_at?: string | null;
     };
 
+    type FileFolder = {
+        id: string;
+        torrent_id: number | null;
+        name: string;
+        download_url: string | null;
+        size_bytes: number;
+        updated_at?: string | null;
+        files: StoredFile[];
+    };
+
     let {
         quota,
-        files,
+        fileFolders,
     }: {
         quota: {
             used_bytes: number;
             quota_bytes: number;
             remaining_bytes: number;
         };
-        files: StoredFile[];
+        fileFolders: FileFolder[];
     } = $props();
 
     const formatBytes = (bytes: number): string => {
@@ -120,8 +130,8 @@
             </div>
         </div>
 
-        {#each files as file (file.id)}
-            <FileRow {file} />
+        {#each fileFolders as folder (folder.id)}
+            <FileFolderRow {folder} />
         {:else}
             <div class="px-4 py-16 text-center text-sm text-zinc-500">
                 No completed files yet.

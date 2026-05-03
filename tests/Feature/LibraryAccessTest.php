@@ -2,6 +2,7 @@
 
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
+use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -11,7 +12,9 @@ test('users only see their own stored files in the library', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
 
-    StoredFile::factory()->for($user)->create(['name' => 'mine.mp4']);
+    $torrent = Torrent::factory()->for($user)->create(['name' => 'Mine Folder']);
+
+    StoredFile::factory()->for($user)->for($torrent)->create(['name' => 'mine.mp4']);
     StoredFile::factory()->for($otherUser)->create(['name' => 'theirs.mp4']);
 
     $this->actingAs($user)
@@ -19,8 +22,10 @@ test('users only see their own stored files in the library', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Library/Index')
-            ->has('files', 1)
-            ->where('files.0.name', 'mine.mp4')
+            ->has('fileFolders', 1)
+            ->where('fileFolders.0.name', 'Mine Folder')
+            ->has('fileFolders.0.files', 1)
+            ->where('fileFolders.0.files.0.name', 'mine.mp4')
         );
 });
 

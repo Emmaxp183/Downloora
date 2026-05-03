@@ -16,7 +16,7 @@
     import Clock3 from 'lucide-svelte/icons/clock-3';
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
-    import FileRow from '@/components/files/FileRow.svelte';
+    import FileFolderRow from '@/components/files/FileFolderRow.svelte';
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
     import TorrentSubmitForm from '@/components/torrents/TorrentSubmitForm.svelte';
 
@@ -41,10 +41,20 @@
         updated_at?: string | null;
     };
 
+    type FileFolder = {
+        id: string;
+        torrent_id: number | null;
+        name: string;
+        download_url: string | null;
+        size_bytes: number;
+        updated_at?: string | null;
+        files: StoredFile[];
+    };
+
     let {
         quota,
         activeTorrent,
-        recentFiles,
+        recentFileFolders,
     }: {
         quota: {
             used_bytes: number;
@@ -52,7 +62,7 @@
             remaining_bytes: number;
         };
         activeTorrent: Torrent | null;
-        recentFiles: StoredFile[];
+        recentFileFolders: FileFolder[];
     } = $props();
 
     const user = $derived(page.props.auth.user);
@@ -81,7 +91,12 @@
     const { start: startPolling, stop: stopPolling } = usePoll(
         2000,
         {
-            only: ['quota', 'activeTorrent', 'recentTorrents', 'recentFiles'],
+            only: [
+                'quota',
+                'activeTorrent',
+                'recentTorrents',
+                'recentFileFolders',
+            ],
         },
         {
             autoStart: false,
@@ -176,8 +191,8 @@
             <TorrentProgress torrent={activeTorrent} />
         {/if}
 
-        {#each recentFiles as file (file.id)}
-            <FileRow {file} />
+        {#each recentFileFolders as folder (folder.id)}
+            <FileFolderRow {folder} />
         {:else}
             <div class="px-4 py-16 text-center text-sm text-zinc-500">
                 No completed files yet.

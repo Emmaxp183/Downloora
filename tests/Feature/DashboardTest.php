@@ -30,12 +30,12 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
         'progress' => 42,
     ]);
 
-    Torrent::factory()->for($user)->create([
-        'name' => 'Completed Torrent',
+    $completedTorrent = Torrent::factory()->for($user)->create([
+        'name' => 'Stored Torrent',
         'status' => TorrentStatus::Completed,
     ]);
 
-    StoredFile::factory()->for($user)->create(['name' => 'video.mp4']);
+    StoredFile::factory()->for($user)->for($completedTorrent)->create(['name' => 'video.mp4']);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -47,6 +47,8 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
             ->where('quota.remaining_bytes', 750)
             ->where('activeTorrent.name', 'Active Torrent')
             ->has('recentTorrents', 2)
-            ->has('recentFiles', 1)
+            ->has('recentFileFolders', 1)
+            ->where('recentFileFolders.0.name', 'Stored Torrent')
+            ->has('recentFileFolders.0.files', 1)
         );
 });

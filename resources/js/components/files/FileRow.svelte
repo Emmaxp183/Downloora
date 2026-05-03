@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
     import Download from 'lucide-svelte/icons/download';
-    import Folder from 'lucide-svelte/icons/folder';
+    import FileText from 'lucide-svelte/icons/file-text';
     import Play from 'lucide-svelte/icons/play';
     import X from 'lucide-svelte/icons/x';
     import { destroy } from '@/actions/App/Http/Controllers/StoredFileAccessController';
@@ -49,7 +49,7 @@
     <span
         class="flex size-10 shrink-0 items-center justify-center text-amber-400"
     >
-        <Folder class="size-8 fill-current stroke-[1.5] text-amber-400" />
+        <FileText class="size-6 stroke-[1.7]" />
     </span>
 
     <div class="min-w-0">

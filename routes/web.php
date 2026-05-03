@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\StoredFileAccessController;
 use App\Http\Controllers\TorrentController;
+use App\Http\Controllers\TorrentFolderAccessController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -27,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('signed')
         ->name('files.stream');
     Route::delete('files/{storedFile}', [StoredFileAccessController::class, 'destroy'])->name('files.destroy');
+    Route::get('folders/{torrent}/download', [TorrentFolderAccessController::class, 'download'])
+        ->middleware('signed')
+        ->name('folders.download');
+    Route::delete('folders/{torrent}', [TorrentFolderAccessController::class, 'destroy'])->name('folders.destroy');
 });
 
 Route::prefix('admin')

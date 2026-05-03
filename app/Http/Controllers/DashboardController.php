@@ -3,21 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Services\Storage\StorageQuota;
+use App\Services\Storage\StoredFileFolderPayloads;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, StorageQuota $storageQuota): Response
-    {
+    public function __invoke(
+        Request $request,
+        StorageQuota $storageQuota,
+        StoredFileFolderPayloads $storedFileFolderPayloads,
+    ): Response {
         $user = $request->user();
 
         $activeTorrent = $user->torrents()
             ->active()
             ->latest()
             ->first();
+
+        $recentFiles = $user->storedFiles()
+            ->with('torrent')
+            ->latest()
+            ->limit(50)
+            ->get();
 
         return Inertia::render('Dashboard', [
             'quota' => [
@@ -31,20 +40,10 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get()
                 ->map(fn ($torrent): array => $this->torrentPayload($torrent)),
-            'recentFiles' => $user->storedFiles()
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn ($file): array => [
-                    'id' => $file->id,
-                    'name' => $file->name,
-                    'original_path' => $file->original_path,
-                    'size_bytes' => $file->size_bytes,
-                    'mime_type' => $file->mime_type,
-                    'download_url' => URL::signedRoute('files.download', $file),
-                    'stream_url' => URL::signedRoute('files.stream', $file),
-                    'updated_at' => $file->updated_at?->toIso8601String(),
-                ]),
+            'recentFileFolders' => $storedFileFolderPayloads
+                ->fromFiles($recentFiles)
+                ->take(5)
+                ->values(),
         ]);
     }
 
