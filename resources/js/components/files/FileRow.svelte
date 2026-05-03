@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
     import Download from 'lucide-svelte/icons/download';
     import FileText from 'lucide-svelte/icons/file-text';
     import Play from 'lucide-svelte/icons/play';
     import X from 'lucide-svelte/icons/x';
+    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import { destroy } from '@/actions/App/Http/Controllers/StoredFileAccessController';
 
     type StoredFile = {
@@ -18,6 +18,8 @@
     };
 
     let { file }: { file: StoredFile } = $props();
+
+    let deleteDialogOpen = $state(false);
 
     const canPlay = $derived(
         file.mime_type?.startsWith('video/') ||
@@ -36,11 +38,7 @@
             : 'Unknown',
     );
 
-    const confirmDelete = (event: MouseEvent): void => {
-        if (!confirm(`Delete ${file.name}?`)) {
-            event.preventDefault();
-        }
-    };
+    const deleteForm = $derived(destroy.form(file.id));
 </script>
 
 <div
@@ -77,17 +75,14 @@
             </a>
         {/if}
 
-        <Link
-            href={destroy(file.id)}
-            as="button"
+        <button
             type="button"
-            preserveScroll
-            onclick={confirmDelete}
+            onclick={() => (deleteDialogOpen = true)}
             class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
             title="Delete"
         >
             <X class="size-4" />
-        </Link>
+        </button>
     </div>
 
     <div class="hidden text-base tabular-nums sm:block">{size}</div>
@@ -96,3 +91,11 @@
         {changed}
     </div>
 </div>
+
+<ConfirmDeleteDialog
+    bind:open={deleteDialogOpen}
+    title="Delete this file?"
+    description={`This will permanently delete ${file.name} from your library.`}
+    confirmLabel="Delete file"
+    form={deleteForm}
+/>

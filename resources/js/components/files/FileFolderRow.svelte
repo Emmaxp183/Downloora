@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
     import ChevronRight from 'lucide-svelte/icons/chevron-right';
     import Download from 'lucide-svelte/icons/download';
     import Folder from 'lucide-svelte/icons/folder';
     import X from 'lucide-svelte/icons/x';
+    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import FileRow from '@/components/files/FileRow.svelte';
     import { destroy } from '@/actions/App/Http/Controllers/TorrentFolderAccessController';
 
@@ -31,6 +31,7 @@
     let { folder }: { folder: FileFolder } = $props();
 
     let expanded = $state(false);
+    let deleteDialogOpen = $state(false);
 
     const size = $derived(`${(folder.size_bytes / 1024 / 1024).toFixed(2)} MB`);
     const changed = $derived(
@@ -50,11 +51,9 @@
             : `${folder.files.length.toLocaleString()} files`,
     );
 
-    const confirmDelete = (event: MouseEvent): void => {
-        if (!confirm(`Delete ${folder.name} and all files inside?`)) {
-            event.preventDefault();
-        }
-    };
+    const deleteForm = $derived(
+        folder.torrent_id ? destroy.form(folder.torrent_id) : null,
+    );
 </script>
 
 <div>
@@ -95,17 +94,14 @@
             {/if}
 
             {#if folder.torrent_id}
-                <Link
-                    href={destroy(folder.torrent_id)}
-                    as="button"
+                <button
                     type="button"
-                    preserveScroll
-                    onclick={confirmDelete}
+                    onclick={() => (deleteDialogOpen = true)}
                     class="flex size-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition hover:bg-rose-50 hover:text-rose-500 dark:bg-zinc-900 dark:hover:bg-rose-950"
                     title="Delete folder"
                 >
                     <X class="size-4" />
-                </Link>
+                </button>
             {/if}
 
             <button
@@ -136,3 +132,13 @@
         </div>
     {/if}
 </div>
+
+{#if deleteForm}
+    <ConfirmDeleteDialog
+        bind:open={deleteDialogOpen}
+        title="Delete this folder and all files inside?"
+        description={`This will permanently delete ${folder.name}, every file inside it, and the uploaded torrent source file if one exists.`}
+        confirmLabel="Delete folder"
+        form={deleteForm}
+    />
+{/if}
