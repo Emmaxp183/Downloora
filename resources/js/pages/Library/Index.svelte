@@ -31,6 +31,7 @@
     type FileFolder = {
         id: string;
         torrent_id: number | null;
+        media_import_id: number | null;
         name: string;
         download_url: string | null;
         size_bytes: number;

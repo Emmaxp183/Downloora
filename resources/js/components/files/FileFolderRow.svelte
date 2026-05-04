@@ -5,7 +5,8 @@
     import X from 'lucide-svelte/icons/x';
     import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import FileRow from '@/components/files/FileRow.svelte';
-    import { destroy } from '@/actions/App/Http/Controllers/TorrentFolderAccessController';
+    import { destroy as destroyMediaFolder } from '@/actions/App/Http/Controllers/MediaFolderAccessController';
+    import { destroy as destroyTorrentFolder } from '@/actions/App/Http/Controllers/TorrentFolderAccessController';
 
     type StoredFile = {
         id: number;
@@ -21,6 +22,7 @@
     type FileFolder = {
         id: string;
         torrent_id: number | null;
+        media_import_id: number | null;
         name: string;
         download_url: string | null;
         size_bytes: number;
@@ -52,7 +54,11 @@
     );
 
     const deleteForm = $derived(
-        folder.torrent_id ? destroy.form(folder.torrent_id) : null,
+        folder.torrent_id
+            ? destroyTorrentFolder.form(folder.torrent_id)
+            : folder.media_import_id
+              ? destroyMediaFolder.form(folder.media_import_id)
+              : null,
     );
 </script>
 
@@ -96,7 +102,7 @@
                 </a>
             {/if}
 
-            {#if folder.torrent_id}
+            {#if deleteForm}
                 <button
                     type="button"
                     onclick={() => (deleteDialogOpen = true)}
@@ -140,7 +146,7 @@
     <ConfirmDeleteDialog
         bind:open={deleteDialogOpen}
         title="Delete this folder and all files inside?"
-        description={`This will permanently delete ${folder.name}, every file inside it, and the uploaded torrent source file if one exists.`}
+        description={`This will permanently delete ${folder.name} and every file inside it.`}
         confirmLabel="Delete folder"
         form={deleteForm}
     />

@@ -9,6 +9,8 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     postgresql-dev \
+    ffmpeg \
+    yt-dlp \
     unzip \
     zip \
     $PHPIZE_DEPS \

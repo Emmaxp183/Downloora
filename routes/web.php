@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\TorrentController as AdminTorrentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\MediaFolderAccessController;
+use App\Http\Controllers\MediaImportController;
 use App\Http\Controllers\StoredFileAccessController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentFolderAccessController;
@@ -20,6 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:6,1')
         ->name('torrents.store');
     Route::delete('torrents/{torrent}', [TorrentController::class, 'destroy'])->name('torrents.destroy');
+    Route::post('media-imports/{mediaImport}/formats', [MediaImportController::class, 'storeFormat'])
+        ->middleware('throttle:12,1')
+        ->name('media-imports.formats.store');
+    Route::delete('media-imports/{mediaImport}', [MediaImportController::class, 'destroy'])->name('media-imports.destroy');
     Route::get('library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('files/{storedFile}/download', [StoredFileAccessController::class, 'download'])
         ->middleware('signed')
@@ -32,6 +38,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('signed')
         ->name('folders.download');
     Route::delete('folders/{torrent}', [TorrentFolderAccessController::class, 'destroy'])->name('folders.destroy');
+    Route::get('media-folders/{mediaImport}/download', [MediaFolderAccessController::class, 'download'])
+        ->middleware('signed')
+        ->name('media-folders.download');
+    Route::delete('media-folders/{mediaImport}', [MediaFolderAccessController::class, 'destroy'])->name('media-folders.destroy');
 });
 
 Route::prefix('admin')

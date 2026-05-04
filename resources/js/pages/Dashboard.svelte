@@ -18,6 +18,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import PlanPickerDialog from '@/components/billing/PlanPickerDialog.svelte';
     import FileFolderRow from '@/components/files/FileFolderRow.svelte';
+    import MediaImportProgress from '@/components/media/MediaImportProgress.svelte';
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
     import TorrentSubmitForm from '@/components/torrents/TorrentSubmitForm.svelte';
 
@@ -42,9 +43,37 @@
         updated_at?: string | null;
     };
 
+    type MediaFormat = {
+        id: string;
+        selector: string;
+        type: 'video' | 'audio' | 'file';
+        extension: string | null;
+        quality: string;
+        duration_seconds: number | null;
+        size_bytes: number | null;
+        source: string | null;
+    };
+
+    type MediaImport = {
+        id: number;
+        title: string | null;
+        source_url: string;
+        source_domain: string | null;
+        thumbnail_url: string | null;
+        status: string;
+        progress: number;
+        duration_seconds: number | null;
+        estimated_size_bytes: number | null;
+        downloaded_bytes: number;
+        formats: MediaFormat[];
+        selected_format: MediaFormat | null;
+        error_message: string | null;
+    };
+
     type FileFolder = {
         id: string;
         torrent_id: number | null;
+        media_import_id: number | null;
         name: string;
         download_url: string | null;
         size_bytes: number;
@@ -55,6 +84,7 @@
     let {
         quota,
         activeTorrent,
+        activeMediaImport,
         recentFileFolders,
     }: {
         quota: {
@@ -63,6 +93,7 @@
             remaining_bytes: number;
         };
         activeTorrent: Torrent | null;
+        activeMediaImport: MediaImport | null;
         recentFileFolders: FileFolder[];
     } = $props();
 
@@ -89,6 +120,12 @@
               )
             : 0,
     );
+    const mediaImportNeedsPolling = $derived(
+        activeMediaImport !== null &&
+            ['inspecting', 'queued', 'downloading', 'importing'].includes(
+                activeMediaImport.status,
+            ),
+    );
 
     const { start: startPolling, stop: stopPolling } = usePoll(
         2000,
@@ -96,6 +133,7 @@
             only: [
                 'quota',
                 'activeTorrent',
+                'activeMediaImport',
                 'recentTorrents',
                 'recentFileFolders',
             ],
@@ -106,7 +144,7 @@
     );
 
     $effect(() => {
-        if (activeTorrent) {
+        if (activeTorrent || mediaImportNeedsPolling) {
             startPolling();
         } else {
             stopPolling();
@@ -159,7 +197,9 @@
         <div
             class="seedr-card flex min-w-0 items-center bg-[var(--seedr-paper)] p-4"
         >
-            <TorrentSubmitForm disabled={activeTorrent !== null} />
+            <TorrentSubmitForm
+                disabled={activeTorrent !== null || activeMediaImport !== null}
+            />
         </div>
     </section>
 
@@ -194,6 +234,10 @@
 
         {#if activeTorrent}
             <TorrentProgress torrent={activeTorrent} />
+        {/if}
+
+        {#if activeMediaImport}
+            <MediaImportProgress mediaImport={activeMediaImport} />
         {/if}
 
         {#each recentFileFolders as folder (folder.id)}

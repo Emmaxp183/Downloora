@@ -19,7 +19,7 @@ class LibraryController extends Controller
 
         $files = $request->user()
             ->storedFiles()
-            ->with('torrent')
+            ->with(['torrent', 'mediaImport'])
             ->latest()
             ->get();
 

@@ -22,8 +22,13 @@ class DashboardController extends Controller
             ->latest()
             ->first();
 
+        $activeMediaImport = $user->mediaImports()
+            ->active()
+            ->latest()
+            ->first();
+
         $recentFiles = $user->storedFiles()
-            ->with('torrent')
+            ->with(['torrent', 'mediaImport'])
             ->latest()
             ->limit(50)
             ->get();
@@ -35,6 +40,7 @@ class DashboardController extends Controller
                 'remaining_bytes' => $storageQuota->remainingBytes($user),
             ],
             'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent) : null,
+            'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport) : null,
             'recentTorrents' => $user->torrents()
                 ->latest()
                 ->limit(10)
@@ -60,6 +66,28 @@ class DashboardController extends Controller
             'total_size_bytes' => $torrent->total_size_bytes,
             'downloaded_bytes' => $torrent->downloaded_bytes,
             'error_message' => $torrent->error_message,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mediaImportPayload($mediaImport): array
+    {
+        return [
+            'id' => $mediaImport->id,
+            'title' => $mediaImport->title,
+            'source_url' => $mediaImport->source_url,
+            'source_domain' => $mediaImport->source_domain,
+            'thumbnail_url' => $mediaImport->thumbnail_url,
+            'status' => $mediaImport->status->value,
+            'progress' => $mediaImport->progress,
+            'duration_seconds' => $mediaImport->duration_seconds,
+            'estimated_size_bytes' => $mediaImport->estimated_size_bytes,
+            'downloaded_bytes' => $mediaImport->downloaded_bytes,
+            'formats' => $mediaImport->formats ?? [],
+            'selected_format' => $mediaImport->selected_format,
+            'error_message' => $mediaImport->error_message,
         ];
     }
 }

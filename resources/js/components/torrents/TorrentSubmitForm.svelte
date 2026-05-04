@@ -40,9 +40,9 @@
                     <Link2 class="size-5" />
                 </div>
                 <input
-                    id="magnet_uri"
-                    name="magnet_uri"
-                    placeholder="Paste magnet link URL here"
+                    id="url"
+                    name="url"
+                    placeholder="Paste magnet link or media URL here"
                     disabled={disabled || processing}
                     class="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     autocomplete="off"
@@ -51,7 +51,7 @@
                     type="submit"
                     disabled={disabled || processing}
                     class="flex w-16 shrink-0 items-center justify-center border-l-2 border-foreground bg-[var(--seedr-orange)] text-[var(--seedr-ink)] transition hover:bg-[var(--seedr-lime)] disabled:cursor-not-allowed disabled:opacity-50"
-                    title="Add magnet"
+                    title="Add link"
                 >
                     <Plus class="size-7 stroke-[3]" />
                 </button>
@@ -82,7 +82,11 @@
             </button>
         </div>
 
-        {#if errors.magnet_uri}
+        {#if errors.url}
+            <p class="mt-2 text-sm font-semibold text-destructive">
+                {errors.url}
+            </p>
+        {:else if errors.magnet_uri}
             <p class="mt-2 text-sm font-semibold text-destructive">
                 {errors.magnet_uri}
             </p>
@@ -96,7 +100,7 @@
             </p>
         {:else if disabled}
             <p class="mt-2 text-sm font-medium text-muted-foreground">
-                Finish or cancel your active torrent before adding another.
+                Finish or cancel your active download before adding another.
             </p>
         {/if}
     {/snippet}

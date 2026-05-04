@@ -22,6 +22,7 @@ class StoredFileFactory extends Factory
         return [
             'user_id' => User::factory(),
             'torrent_id' => Torrent::factory(),
+            'media_import_id' => null,
             's3_disk' => 's3',
             's3_bucket' => 'seedr',
             's3_key' => 'users/1/torrents/1/'.fake()->uuid().'.bin',

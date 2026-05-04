@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'user_id',
     'torrent_id',
+    'media_import_id',
     's3_disk',
     's3_bucket',
     's3_key',
@@ -52,6 +53,14 @@ class StoredFile extends Model
     public function torrent(): BelongsTo
     {
         return $this->belongsTo(Torrent::class);
+    }
+
+    /**
+     * Get the media import that produced this stored file.
+     */
+    public function mediaImport(): BelongsTo
+    {
+        return $this->belongsTo(MediaImport::class);
     }
 
     /**

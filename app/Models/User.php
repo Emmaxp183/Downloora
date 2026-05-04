@@ -52,6 +52,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the media imports submitted by the user.
+     */
+    public function mediaImports(): HasMany
+    {
+        return $this->hasMany(MediaImport::class);
+    }
+
+    /**
      * Get the completed files stored for the user.
      */
     public function storedFiles(): HasMany

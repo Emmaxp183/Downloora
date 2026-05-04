@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MediaImportStatus;
 use App\Enums\TorrentSourceType;
 use App\Enums\TorrentStatus;
 use App\Http\Requests\StoreTorrentRequest;
+use App\Jobs\InspectMediaImport;
 use App\Jobs\InspectTorrentMetadata;
+use App\Models\MediaImport;
 use App\Models\Torrent;
 use App\Services\Torrents\QBittorrentClient;
 use Illuminate\Http\RedirectResponse;
@@ -20,11 +23,34 @@ class TorrentController extends Controller
     public function store(StoreTorrentRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $activeErrorField = $request->filled('magnet_uri') && ! $request->filled('url')
+            ? 'magnet_uri'
+            : 'url';
 
         if ($user->torrents()->active()->exists()) {
             throw ValidationException::withMessages([
-                'magnet_uri' => __('You already have an active torrent.'),
+                $activeErrorField => __('You already have an active download.'),
             ]);
+        }
+
+        if ($user->mediaImports()->active()->exists()) {
+            throw ValidationException::withMessages([
+                $activeErrorField => __('You already have an active download.'),
+            ]);
+        }
+
+        if ($request->isMediaUrl()) {
+            $mediaImport = MediaImport::create([
+                'user_id' => $user->id,
+                'source_url' => $request->downloadUrl(),
+                'source_domain' => parse_url((string) $request->downloadUrl(), PHP_URL_HOST),
+                'status' => MediaImportStatus::Inspecting,
+                'progress' => 0,
+            ]);
+
+            InspectMediaImport::dispatch($mediaImport);
+
+            return to_route('dashboard');
         }
 
         $torrentFilePath = $request->hasFile('torrent_file')
@@ -33,10 +59,10 @@ class TorrentController extends Controller
 
         $torrent = Torrent::create([
             'user_id' => $user->id,
-            'source_type' => $request->filled('magnet_uri')
+            'source_type' => $request->isMagnet()
                 ? TorrentSourceType::Magnet
                 : TorrentSourceType::TorrentFile,
-            'magnet_uri' => $request->string('magnet_uri')->toString() ?: null,
+            'magnet_uri' => $request->isMagnet() ? $request->downloadUrl() : null,
             'torrent_file_path' => $torrentFilePath,
             'status' => TorrentStatus::PendingMetadata,
             'progress' => 0,

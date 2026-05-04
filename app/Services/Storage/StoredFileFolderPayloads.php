@@ -15,6 +15,7 @@ class StoredFileFolderPayloads
      * @return Collection<int, array{
      *     id: string,
      *     torrent_id: int|null,
+     *     media_import_id: int|null,
      *     name: string,
      *     download_url: string|null,
      *     size_bytes: int,
@@ -37,6 +38,10 @@ class StoredFileFolderPayloads
             return 'torrent-'.$file->torrent_id;
         }
 
+        if ($file->media_import_id !== null) {
+            return 'media-'.$file->media_import_id;
+        }
+
         return 'file-'.$file->id;
     }
 
@@ -45,6 +50,7 @@ class StoredFileFolderPayloads
      * @return array{
      *     id: string,
      *     torrent_id: int|null,
+     *     media_import_id: int|null,
      *     name: string,
      *     download_url: string|null,
      *     size_bytes: int,
@@ -61,10 +67,9 @@ class StoredFileFolderPayloads
         return [
             'id' => $this->folderKey($firstFile),
             'torrent_id' => $firstFile->torrent_id,
-            'name' => $firstFile->torrent?->name ?: $this->fallbackFolderName($firstFile),
-            'download_url' => $firstFile->torrent_id !== null
-                ? URL::signedRoute('folders.download', $firstFile->torrent_id)
-                : null,
+            'media_import_id' => $firstFile->media_import_id,
+            'name' => $firstFile->torrent?->name ?: ($firstFile->mediaImport?->title ?: $this->fallbackFolderName($firstFile)),
+            'download_url' => $this->downloadUrl($firstFile),
             'size_bytes' => (int) $files->sum('size_bytes'),
             'updated_at' => $updatedAt?->toIso8601String(),
             'files' => $files
@@ -73,6 +78,19 @@ class StoredFileFolderPayloads
                 ->values()
                 ->all(),
         ];
+    }
+
+    private function downloadUrl(StoredFile $file): ?string
+    {
+        if ($file->torrent_id !== null) {
+            return URL::signedRoute('folders.download', $file->torrent_id);
+        }
+
+        if ($file->media_import_id !== null) {
+            return URL::signedRoute('media-folders.download', $file->media_import_id);
+        }
+
+        return null;
     }
 
     /**

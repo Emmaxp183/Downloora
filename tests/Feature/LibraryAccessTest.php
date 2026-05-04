@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\MediaImport;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Models\Torrent;
@@ -26,6 +27,29 @@ test('users only see their own stored files in the library', function () {
             ->where('fileFolders.0.name', 'Mine Folder')
             ->has('fileFolders.0.files', 1)
             ->where('fileFolders.0.files.0.name', 'mine.mp4')
+        );
+});
+
+test('media folders include folder download and delete metadata', function () {
+    $user = User::factory()->create();
+    $mediaImport = MediaImport::factory()->for($user)->create(['title' => 'Saved Video']);
+
+    StoredFile::factory()->for($user)->create([
+        'torrent_id' => null,
+        'media_import_id' => $mediaImport->id,
+        'name' => 'saved-video.mp4',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('library.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Library/Index')
+            ->has('fileFolders', 1)
+            ->where('fileFolders.0.name', 'Saved Video')
+            ->where('fileFolders.0.media_import_id', $mediaImport->id)
+            ->where('fileFolders.0.torrent_id', null)
+            ->where('fileFolders.0.download_url', fn (?string $url): bool => str_contains($url ?? '', '/media-folders/'.$mediaImport->id.'/download'))
         );
 });
 
