@@ -17,6 +17,7 @@
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
     import { register } from '@/routes';
+    import { redirect as googleRedirect } from '@/routes/auth/google';
     import { store } from '@/routes/login';
     import { request } from '@/routes/password';
 
@@ -38,6 +39,27 @@
         {status}
     </div>
 {/if}
+
+<div class="flex flex-col gap-4">
+    <a
+        href={googleRedirect.url()}
+        class="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border-2 border-foreground bg-card px-5 py-3 text-sm font-bold text-foreground shadow-[3px_3px_0_0_var(--foreground)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-muted hover:shadow-[1px_1px_0_0_var(--foreground)]"
+    >
+        <span
+            class="flex size-7 items-center justify-center rounded-full bg-white text-base font-black text-foreground"
+            aria-hidden="true"
+        >
+            G
+        </span>
+        Continue with Google
+    </a>
+
+    <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <span class="h-px flex-1 bg-border"></span>
+        <span>Email login</span>
+        <span class="h-px flex-1 bg-border"></span>
+    </div>
+</div>
 
 <Form
     {...store.form()}

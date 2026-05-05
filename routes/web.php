@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Admin\TorrentController as AdminTorrentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\MediaFolderAccessController;
 use App\Http\Controllers\MediaImportController;
@@ -17,8 +19,17 @@ Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
+Route::middleware('guest')->group(function () {
+    Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::post('billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+    Route::get('billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
     Route::post('torrents', [TorrentController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('torrents.store');

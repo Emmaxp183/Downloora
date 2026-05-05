@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { router } from '@inertiajs/svelte';
     import ArrowRight from 'lucide-svelte/icons/arrow-right';
     import Check from 'lucide-svelte/icons/check';
     import Cloud from 'lucide-svelte/icons/cloud';
@@ -13,6 +14,7 @@
         DialogTitle,
     } from '@/components/ui/dialog';
     import { cn } from '@/lib/utils';
+    import { checkout } from '@/routes/billing';
 
     type PlanId = 'basic' | 'pro' | 'master';
 
@@ -29,20 +31,23 @@
 
     let {
         open = $bindable(false),
+        currentPlanId = 'free',
     }: {
         open?: boolean;
+        currentPlanId?: PlanId | 'free';
     } = $props();
 
     let selectedPlan = $state<PlanId>('pro');
-    let billYearly = $state(false);
+    let processing = $state(false);
+    let planError = $state<string | null>(null);
 
     const plans: Plan[] = [
         {
             id: 'basic',
             name: 'Basic',
-            quota: '30 GB',
+            quota: '50 GB',
             description: 'Perfect for steady weekend use',
-            price: '6.95',
+            price: '5.99',
             icon: Flame,
             iconClass: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
         },
@@ -51,7 +56,7 @@
             name: 'Pro',
             quota: '100 GB',
             description: 'Perfect for large libraries & advanced networks',
-            price: '9.95',
+            price: '10',
             icon: Sprout,
             iconClass: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
             popular: true,
@@ -61,11 +66,40 @@
             name: 'Master',
             quota: '1 TB',
             description: 'Perfect for power users & hoarders',
-            price: '19.95',
+            price: '20',
             icon: Cloud,
             iconClass: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
         },
     ];
+
+    const startCheckout = (): void => {
+        planError = null;
+        processing = true;
+
+        router.post(
+            checkout.url(selectedPlan),
+            {},
+            {
+                preserveScroll: true,
+                onError: (errors) => {
+                    planError =
+                        typeof errors.plan === 'string'
+                            ? errors.plan
+                            : 'Unable to start Stripe Checkout. Please try again.';
+                },
+                onFinish: () => {
+                    processing = false;
+                },
+            },
+        );
+    };
+
+    $effect(() => {
+        if (open) {
+            selectedPlan = currentPlanId === 'free' ? 'pro' : currentPlanId;
+            planError = null;
+        }
+    });
 </script>
 
 <Dialog bind:open>
@@ -130,6 +164,13 @@
                                 <span class="text-2xl font-medium"
                                     >{plan.name}</span
                                 >
+                                {#if currentPlanId === plan.id}
+                                    <span
+                                        class="rounded-full border border-foreground bg-[var(--downloora-paper)] px-3 py-1 text-xs font-black uppercase"
+                                    >
+                                        Current
+                                    </span>
+                                {/if}
                                 <span
                                     class="rounded-full border border-foreground bg-card px-3 py-1 text-sm font-bold"
                                 >
@@ -160,34 +201,26 @@
                 {/each}
             </div>
 
-            <button
-                type="button"
-                onclick={() => (billYearly = !billYearly)}
-                class="flex w-full items-center justify-between gap-4 rounded-[1.25rem] border-2 border-foreground bg-card p-4 text-left shadow-[3px_3px_0_0_var(--foreground)]"
-                aria-pressed={billYearly}
+            <div
+                class="rounded-[1.25rem] border-2 border-foreground bg-card p-4 text-sm font-semibold text-muted-foreground shadow-[3px_3px_0_0_var(--foreground)]"
             >
-                <span>
-                    <span class="block text-xl font-black">Bill yearly</span>
-                    <span
-                        class="mt-1 flex items-center gap-2 text-base font-bold text-[var(--downloora-green)]"
-                    >
-                        <Check class="size-5" />
-                        Save €19.90 per year
-                    </span>
-                </span>
                 <span
-                    class={cn(
-                        'flex h-9 w-16 items-center rounded-full p-1 transition',
-                        billYearly
-                            ? 'justify-end border-2 border-foreground bg-[var(--downloora-lime)]'
-                            : 'justify-start border-2 border-foreground bg-muted',
-                    )}
+                    class="mr-2 inline-flex size-6 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)]"
                 >
-                    <span
-                        class="size-7 rounded-full border border-foreground bg-card shadow-sm"
-                    ></span>
+                    <Check class="size-4" />
                 </span>
-            </button>
+                Monthly billing is handled securely by Stripe in EUR. You can
+                pay with card or iDEAL and manage cards, invoices, and
+                cancellation in Stripe Billing.
+            </div>
+
+            {#if planError}
+                <p
+                    class="rounded-[1.25rem] border-2 border-[var(--downloora-danger)] bg-[var(--downloora-danger)]/10 p-4 text-sm font-bold text-[var(--downloora-danger)]"
+                >
+                    {planError}
+                </p>
+            {/if}
 
             <div
                 class="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-muted-foreground"
@@ -204,10 +237,11 @@
 
             <button
                 type="button"
-                onclick={() => (open = false)}
+                onclick={startCheckout}
+                disabled={processing}
                 class="downloora-button flex min-h-14 w-full text-xl"
             >
-                Continue
+                {processing ? 'Opening Stripe...' : 'Continue'}
                 <ArrowRight class="size-6" />
             </button>
 

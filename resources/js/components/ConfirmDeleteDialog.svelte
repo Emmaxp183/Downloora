@@ -26,11 +26,19 @@
         confirmLabel?: string;
         form: FormDefinition;
     } = $props();
+
+    const closeOnSuccess = (): void => {
+        open = false;
+    };
 </script>
 
 <Dialog bind:open>
     <DialogContent>
-        <Form {...form} options={{ preserveScroll: true }}>
+        <Form
+            {...form}
+            options={{ preserveScroll: true }}
+            onSuccess={closeOnSuccess}
+        >
             {#snippet children({ processing })}
                 <div class="space-y-3">
                     <DialogTitle>{title}</DialogTitle>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Storage\StorageQuota;
 use App\Services\Storage\StoredFileFolderPayloads;
+use App\Support\BillingPlans;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,8 +15,13 @@ class DashboardController extends Controller
         Request $request,
         StorageQuota $storageQuota,
         StoredFileFolderPayloads $storedFileFolderPayloads,
+        BillingPlans $billingPlans,
     ): Response {
         $user = $request->user();
+        $subscription = $user->subscription($billingPlans->subscriptionType());
+        $currentPlan = $subscription?->valid()
+            ? $billingPlans->findByPriceId($subscription->stripe_price)
+            : null;
 
         $activeTorrent = $user->torrents()
             ->active()
@@ -38,6 +44,12 @@ class DashboardController extends Controller
                 'used_bytes' => $storageQuota->usedBytes($user),
                 'quota_bytes' => $user->storage_quota_bytes,
                 'remaining_bytes' => $storageQuota->remainingBytes($user),
+            ],
+            'billing' => [
+                'current_plan_id' => $currentPlan['id'] ?? 'free',
+                'current_plan_name' => $currentPlan['name'] ?? 'Non-premium',
+                'has_stripe_customer' => $user->hasStripeId(),
+                'status' => $request->session()->get('status'),
             ],
             'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent) : null,
             'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport) : null,

@@ -2,13 +2,16 @@
 
 namespace App\Providers;
 
+use App\Listeners\SyncStripeSubscriptionQuota;
 use App\Services\Torrents\QBittorrentMetadataInspector;
 use App\Services\Torrents\TorrentMetadataInspector;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Cashier\Events\WebhookHandled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureEvents();
     }
 
     /**
@@ -48,5 +52,10 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureEvents(): void
+    {
+        Event::listen(WebhookHandled::class, SyncStripeSubscriptionQuota::class);
     }
 }

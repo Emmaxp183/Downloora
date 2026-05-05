@@ -101,11 +101,18 @@
         prefillWishlistSave,
         wishlistItems,
         recentFileFolders,
+        billing,
     }: {
         quota: {
             used_bytes: number;
             quota_bytes: number;
             remaining_bytes: number;
+        };
+        billing: {
+            current_plan_id: 'free' | 'basic' | 'pro' | 'master';
+            current_plan_name: string;
+            has_stripe_customer: boolean;
+            status: string | null;
         };
         activeTorrent: Torrent | null;
         activeMediaImport: MediaImport | null;
@@ -230,6 +237,14 @@
 <AppHead title="Dashboard" />
 
 <div class="space-y-8">
+    {#if billing.status}
+        <div
+            class="downloora-card bg-[var(--downloora-lime)] px-5 py-4 text-sm font-black text-[var(--downloora-ink)]"
+        >
+            {billing.status}
+        </div>
+    {/if}
+
     <section class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <div
             class="downloora-card flex min-w-0 items-center gap-4 bg-[var(--downloora-paper)] p-5"
@@ -242,7 +257,7 @@
             <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-3">
                     <p class="truncate text-lg font-black uppercase">
-                        Non-premium
+                        {billing.current_plan_name}
                     </p>
                     <button
                         type="button"
@@ -328,4 +343,7 @@
     </section>
 </div>
 
-<PlanPickerDialog bind:open={planDialogOpen} />
+<PlanPickerDialog
+    bind:open={planDialogOpen}
+    currentPlanId={billing.current_plan_id}
+/>

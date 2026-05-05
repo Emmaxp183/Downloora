@@ -59,10 +59,11 @@
 
     const features = [
         {
-            eyebrow: 'Cloud Fetch',
-            title: 'Paste once. Let the server do the heavy lifting.',
-            copy: 'qBittorrent-nox downloads in Docker, then Downloora moves completed files into RustFS and removes the torrent from the client.',
-            icon: Download,
+            eyebrow: 'Cross-Platform',
+            title: 'Watch on any device, anytime.',
+            copy: 'Videos, music, documents — enjoy everything right in your browser. Works with every file format. Cast to your TV in one tap. Nothing to install.',
+            icon: Play,
+            image: '/image1.jpg',
             color: 'bg-[#3D6B4F] text-[#F2EFE9]',
         },
         {
@@ -70,6 +71,7 @@
             title: 'Use it from any screen with no software install.',
             copy: 'Register, paste a magnet, upload a .torrent, monitor progress, and download files from a clean browser interface.',
             icon: Upload,
+            image: '/image2.jpg',
             color: 'bg-[#C9E265] text-[#1A261D]',
         },
         {
@@ -77,6 +79,7 @@
             title: 'Quotas and private libraries are built in.',
             copy: 'Users see their own files, active download, quota meter, and file actions. Admin controls can grow from the same foundation.',
             icon: Users,
+            image: '/Image3.jpg',
             color: 'bg-[#9D8BB5] text-[#F2EFE9]',
         },
     ];
@@ -84,8 +87,8 @@
     const plans = [
         {
             name: 'Basic',
-            storage: '30 GB',
-            price: '€6.95',
+            storage: '50 GB',
+            price: '€5.99',
             color: 'bg-white',
             items: [
                 'Faster transfers',
@@ -96,7 +99,7 @@
         {
             name: 'Pro',
             storage: '100 GB',
-            price: '€9.95',
+            price: '€10',
             color: 'bg-[#C9E265]',
             items: [
                 'Priority transfers',
@@ -107,7 +110,7 @@
         {
             name: 'Master',
             storage: '1 TB',
-            price: '€19.95',
+            price: '€20',
             color: 'bg-white',
             items: [
                 'Power user storage',
@@ -504,9 +507,13 @@
                         class={`mx-auto max-w-md rounded-xl border-2 border-[#1A261D] bg-white p-4 pb-8 shadow-[6px_6px_0_0_#1A261D] ${index % 2 === 0 ? '-rotate-2' : 'rotate-3'}`}
                     >
                         <div
-                            class="flex aspect-square items-center justify-center rounded-lg border border-[#1A261D] bg-[#E8E4DB]"
+                            class="aspect-square overflow-hidden rounded-lg border border-[#1A261D] bg-[#E8E4DB]"
                         >
-                            <feature.icon class="size-28 text-[#3D6B4F]" />
+                            <img
+                                src={feature.image}
+                                alt={feature.title}
+                                class="h-full w-full object-cover"
+                            />
                         </div>
                         <p
                             class="mt-4 text-center font-serif text-sm italic text-[#1A261D]/70"

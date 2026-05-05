@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
+    import { tick } from 'svelte';
     import Link2 from 'lucide-svelte/icons/link-2';
     import Plus from 'lucide-svelte/icons/plus';
     import Upload from 'lucide-svelte/icons/upload';
@@ -27,6 +28,7 @@
 
     let fileInput: HTMLInputElement;
     let urlValue = $state('');
+    let clipboardError = $state<string | null>(null);
 
     const chooseTorrentFile = (): void => {
         fileInput?.click();
@@ -40,6 +42,49 @@
         }
 
         submit();
+    };
+
+    const isDownloadUrl = (value: string): boolean => {
+        if (value.startsWith('magnet:?')) {
+            return true;
+        }
+
+        try {
+            const url = new URL(value);
+
+            return ['http:', 'https:'].includes(url.protocol);
+        } catch {
+            return false;
+        }
+    };
+
+    const pasteClipboardAndSubmit = async (
+        submit: () => void,
+        processing: boolean,
+    ): Promise<void> => {
+        if (processing || !navigator.clipboard?.readText) {
+            return;
+        }
+
+        try {
+            const clipboardValue = (await navigator.clipboard.readText()).trim();
+
+            if (
+                !clipboardValue ||
+                !isDownloadUrl(clipboardValue) ||
+                urlValue.trim() === clipboardValue
+            ) {
+                return;
+            }
+
+            clipboardError = null;
+            urlValue = clipboardValue;
+
+            await tick();
+            submit();
+        } catch {
+            clipboardError = 'Allow clipboard access to auto-paste links.';
+        }
     };
 
     $effect(() => {
@@ -68,6 +113,7 @@
                     disabled={processing}
                     class="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     autocomplete="off"
+                    onclick={() => pasteClipboardAndSubmit(submit, processing)}
                 />
                 <button
                     type="submit"
@@ -124,6 +170,10 @@
         {:else if errors.torrent_file}
             <p class="mt-2 text-sm font-semibold text-destructive">
                 {errors.torrent_file}
+            </p>
+        {:else if clipboardError}
+            <p class="mt-2 text-sm font-semibold text-destructive">
+                {clipboardError}
             </p>
         {:else if progress}
             <p class="mt-2 text-sm font-medium text-muted-foreground">
