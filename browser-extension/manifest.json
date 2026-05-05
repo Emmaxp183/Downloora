@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Seedr Media Helper",
   "description": "Detect public media URLs on the active page and open Seedr with the selected URL prefilled.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "action": {
     "default_title": "Seedr Media Helper",
     "default_popup": "popup.html"

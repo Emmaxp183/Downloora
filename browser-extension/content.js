@@ -26,6 +26,15 @@ const supportedPageUrl = () => {
     };
   }
 
+  if (url.hostname.endsWith('pornhub.com') && url.pathname === '/view_video.php' && url.searchParams.has('viewkey')) {
+    return {
+      url: url.toString(),
+      source: 'PornHub page',
+      kind: 'video',
+      title: document.title.replace(/\s+-\s+Pornhub\.com$/i, '').replace(/\s+-\s+Pornhub$/i, ''),
+    };
+  }
+
   return null;
 };
 

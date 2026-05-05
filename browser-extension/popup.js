@@ -10,6 +10,37 @@ const closeBtn = document.querySelector('#close-btn');
 
 closeBtn.addEventListener('click', () => window.close());
 
+const supportedPageSource = (url) => {
+  if (
+    ['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname) &&
+    url.pathname === '/watch' &&
+    url.searchParams.has('v')
+  ) {
+    return 'YouTube';
+  }
+
+  if (['youtu.be', 'www.youtu.be'].includes(url.hostname) && url.pathname.length > 1) {
+    return 'YouTube';
+  }
+
+  if (url.hostname.endsWith('pornhub.com') && url.pathname === '/view_video.php' && url.searchParams.has('viewkey')) {
+    return 'PornHub';
+  }
+
+  return null;
+};
+
+const cleanPageTitle = (title, source) => {
+  if (!title) {
+    return `${source} video`;
+  }
+
+  return title
+    .replace(/\s+-\s+YouTube$/, '')
+    .replace(/\s+-\s+Pornhub\.com$/i, '')
+    .replace(/\s+-\s+Pornhub$/i, '');
+};
+
 const isIgnoredMediaUrl = (value) => {
   try {
     const url = new URL(value);
@@ -23,36 +54,27 @@ const isIgnoredMediaUrl = (value) => {
 const supportedPageMedia = (tab) => {
   try {
     const url = new URL(tab.url);
-    const title = tab.title?.replace(/\s+-\s+YouTube$/, '') ?? 'YouTube video';
+    const source = supportedPageSource(url);
 
-    if (
-      ['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname) &&
-      url.pathname === '/watch' &&
-      url.searchParams.has('v')
-    ) {
-      return {
-        url: `https://www.youtube.com/watch?v=${url.searchParams.get('v')}`,
-        source: 'YouTube',
-        kind: 'video',
-        title,
-        id: url.searchParams.get('v'),
-      };
+    if (source === null) {
+      return null;
     }
 
-    if (['youtu.be', 'www.youtu.be'].includes(url.hostname) && url.pathname.length > 1) {
-      return {
-        url: `https://youtu.be${url.pathname}`,
-        source: 'YouTube',
-        kind: 'video',
-        title,
-        id: url.pathname.substring(1),
-      };
+    if (source === 'YouTube' && url.hostname !== 'youtu.be' && url.hostname !== 'www.youtu.be') {
+      url.search = `?v=${url.searchParams.get('v')}`;
     }
+
+    return {
+      url: url.toString(),
+      source,
+      kind: 'page',
+      title: cleanPageTitle(tab.title, source),
+      id: source === 'YouTube' ? url.searchParams.get('v') ?? url.pathname.substring(1) : null,
+      inspectPage: true,
+    };
   } catch {
     return null;
   }
-
-  return null;
 };
 
 const mediaLabel = (item) => {
@@ -137,8 +159,8 @@ const uniqueMedia = (items) => {
   });
 
   return uniqueItems.sort((first, second) => {
-    const firstScore = first.source.includes('YouTube') ? 100 : first.kind === 'video' ? 50 : 0;
-    const secondScore = second.source.includes('YouTube') ? 100 : second.kind === 'video' ? 50 : 0;
+    const firstScore = first.inspectPage ? 100 : first.kind === 'video' ? 50 : 0;
+    const secondScore = second.inspectPage ? 100 : second.kind === 'video' ? 50 : 0;
 
     return secondScore - firstScore;
   });
@@ -149,7 +171,7 @@ const renderHeader = (tab, items) => {
 
   if (pageMedia && pageMedia.title) {
     headerTitle.textContent = pageMedia.title;
-    headerSubtitle.textContent = 'YouTube · ready';
+    headerSubtitle.textContent = `${pageMedia.source} · ready`;
 
     if (pageMedia.id) {
       headerThumbnail.src = `https://img.youtube.com/vi/${pageMedia.id}/hqdefault.jpg`;
@@ -186,6 +208,8 @@ const renderMedia = (items) => {
 
     if (item.kind === 'audio') {
       icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>';
+    } else if (item.inspectPage) {
+      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v7.5A2.5 2.5 0 0 0 4.5 19h15a2.5 2.5 0 0 0 2.5-2.5V9a2 2 0 0 0-2-2h-3l-2.5-3Z"></path><circle cx="12" cy="13" r="3"></circle></svg>';
     } else {
       icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>';
     }
@@ -221,11 +245,13 @@ const renderMedia = (items) => {
       format = 'WEBM';
     }
 
-    if (!title.textContent.includes('·')) {
+    if (item.inspectPage) {
+      title.textContent = 'Find quality options';
+    } else if (!title.textContent.includes('·')) {
       title.textContent = `Auto • ${format}`;
     }
 
-    meta.textContent = `${kindText} • ${sourceText}`;
+    meta.textContent = item.inspectPage ? `${sourceText} • same as pasting the page URL` : `${kindText} • ${sourceText}`;
 
     body.append(title, meta);
 
@@ -259,8 +285,8 @@ const scan = async () => {
   const pageMedia = supportedPageMedia(tab);
   const items = uniqueMedia([
     ...(pageMedia === null ? [] : [pageMedia]),
-    ...(await scanContentScript(tab.id)),
-    ...(await getNetworkMedia(tab.id)),
+    ...(pageMedia === null ? await scanContentScript(tab.id) : []),
+    ...(pageMedia === null ? await getNetworkMedia(tab.id) : []),
   ]);
 
   renderHeader(tab, items);
