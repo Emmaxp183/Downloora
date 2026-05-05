@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Seedr Media Helper",
+  "description": "Detect public media URLs on the active page and open Seedr with the selected URL prefilled.",
+  "version": "0.1.1",
+  "action": {
+    "default_title": "Seedr Media Helper",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "storage", "tabs", "webRequest"],
+  "host_permissions": ["http://*/*", "https://*/*"]
+}

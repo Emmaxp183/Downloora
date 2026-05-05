@@ -52,3 +52,33 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
             ->has('recentFileFolders.0.files', 1)
         );
 });
+
+test('dashboard accepts a safe browser extension url prefill', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard', [
+            'url' => 'https://example.com/video.mp4',
+            'source' => 'browser-extension',
+            'auto' => '1',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('prefillUrl', 'https://example.com/video.mp4')
+            ->where('prefillAutoSubmit', true)
+        );
+});
+
+test('dashboard ignores invalid browser extension url prefill values', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard', ['url' => 'javascript:alert(1)']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('prefillUrl', null)
+            ->where('prefillAutoSubmit', false)
+        );
+});

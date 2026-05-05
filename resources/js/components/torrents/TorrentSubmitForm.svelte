@@ -7,8 +7,10 @@
 
     let {
         disabled = false,
+        initialUrl = '',
     }: {
         disabled?: boolean;
+        initialUrl?: string | null;
     } = $props();
 
     let fileInput: HTMLInputElement;
@@ -42,6 +44,7 @@
                 <input
                     id="url"
                     name="url"
+                    value={initialUrl ?? ''}
                     placeholder="Paste magnet link or media URL here"
                     disabled={disabled || processing}
                     class="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"

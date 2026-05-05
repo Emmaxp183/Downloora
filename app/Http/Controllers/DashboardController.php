@@ -41,6 +41,8 @@ class DashboardController extends Controller
             ],
             'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent) : null,
             'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport) : null,
+            'prefillUrl' => $this->prefillUrl($request),
+            'prefillAutoSubmit' => $this->prefillAutoSubmit($request),
             'recentTorrents' => $user->torrents()
                 ->latest()
                 ->limit(10)
@@ -89,5 +91,24 @@ class DashboardController extends Controller
             'selected_format' => $mediaImport->selected_format,
             'error_message' => $mediaImport->error_message,
         ];
+    }
+
+    private function prefillUrl(Request $request): ?string
+    {
+        $url = $request->string('url')->trim()->toString();
+
+        if ($url === '') {
+            return null;
+        }
+
+        return filter_var($url, FILTER_VALIDATE_URL) && in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true)
+            ? $url
+            : null;
+    }
+
+    private function prefillAutoSubmit(Request $request): bool
+    {
+        return $request->string('source')->toString() === 'browser-extension'
+            && $request->boolean('auto');
     }
 }

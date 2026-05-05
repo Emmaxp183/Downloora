@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-    import { page, usePoll } from '@inertiajs/svelte';
+    import { page, router, usePoll } from '@inertiajs/svelte';
     import Clock3 from 'lucide-svelte/icons/clock-3';
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
@@ -21,6 +21,7 @@
     import MediaImportProgress from '@/components/media/MediaImportProgress.svelte';
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
     import TorrentSubmitForm from '@/components/torrents/TorrentSubmitForm.svelte';
+    import { store } from '@/routes/torrents';
 
     type Torrent = {
         id: number;
@@ -85,6 +86,8 @@
         quota,
         activeTorrent,
         activeMediaImport,
+        prefillUrl,
+        prefillAutoSubmit,
         recentFileFolders,
     }: {
         quota: {
@@ -94,11 +97,14 @@
         };
         activeTorrent: Torrent | null;
         activeMediaImport: MediaImport | null;
+        prefillUrl: string | null;
+        prefillAutoSubmit: boolean;
         recentFileFolders: FileFolder[];
     } = $props();
 
     const user = $derived(page.props.auth.user);
     let planDialogOpen = $state(false);
+    let prefillSubmitted = $state(false);
 
     const formatBytes = (bytes: number | null): string => {
         if (!bytes) {
@@ -150,6 +156,35 @@
             stopPolling();
         }
     });
+
+    $effect(() => {
+        if (
+            !prefillAutoSubmit ||
+            prefillSubmitted ||
+            !prefillUrl ||
+            activeTorrent ||
+            activeMediaImport
+        ) {
+            return;
+        }
+
+        prefillSubmitted = true;
+
+        router.post(
+            store.url(),
+            { url: prefillUrl },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('url');
+                    url.searchParams.delete('source');
+                    url.searchParams.delete('auto');
+                    window.history.replaceState({}, '', url.toString());
+                },
+            },
+        );
+    });
 </script>
 
 <AppHead title="Dashboard" />
@@ -199,6 +234,7 @@
         >
             <TorrentSubmitForm
                 disabled={activeTorrent !== null || activeMediaImport !== null}
+                initialUrl={prefillUrl}
             />
         </div>
     </section>
