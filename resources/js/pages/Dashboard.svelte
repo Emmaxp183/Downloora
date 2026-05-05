@@ -22,6 +22,7 @@
     import TorrentProgress from '@/components/torrents/TorrentProgress.svelte';
     import TorrentSubmitForm from '@/components/torrents/TorrentSubmitForm.svelte';
     import { store } from '@/routes/torrents';
+    import { store as storeWishlist } from '@/routes/wishlist';
 
     type Torrent = {
         id: number;
@@ -82,12 +83,23 @@
         files: StoredFile[];
     };
 
+    type WishlistItem = {
+        id: number;
+        url: string;
+        source_type: string;
+        source_domain: string | null;
+        title: string | null;
+        created_at?: string | null;
+    };
+
     let {
         quota,
         activeTorrent,
         activeMediaImport,
         prefillUrl,
         prefillAutoSubmit,
+        prefillWishlistSave,
+        wishlistItems,
         recentFileFolders,
     }: {
         quota: {
@@ -99,12 +111,24 @@
         activeMediaImport: MediaImport | null;
         prefillUrl: string | null;
         prefillAutoSubmit: boolean;
+        prefillWishlistSave: boolean;
+        wishlistItems: WishlistItem[];
         recentFileFolders: FileFolder[];
     } = $props();
 
     const user = $derived(page.props.auth.user);
     let planDialogOpen = $state(false);
     let prefillSubmitted = $state(false);
+    let wishlistPrefillSaved = $state(false);
+
+    const clearPrefillQuery = (): void => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('url');
+        url.searchParams.delete('source');
+        url.searchParams.delete('auto');
+        url.searchParams.delete('wishlist');
+        window.history.replaceState({}, '', url.toString());
+    };
 
     const formatBytes = (bytes: number | null): string => {
         if (!bytes) {
@@ -175,13 +199,29 @@
             { url: prefillUrl },
             {
                 preserveScroll: true,
-                onFinish: () => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('url');
-                    url.searchParams.delete('source');
-                    url.searchParams.delete('auto');
-                    window.history.replaceState({}, '', url.toString());
-                },
+                onFinish: clearPrefillQuery,
+            },
+        );
+    });
+
+    $effect(() => {
+        if (
+            !prefillWishlistSave ||
+            wishlistPrefillSaved ||
+            !prefillUrl ||
+            prefillAutoSubmit
+        ) {
+            return;
+        }
+
+        wishlistPrefillSaved = true;
+
+        router.post(
+            storeWishlist.url(),
+            { url: prefillUrl },
+            {
+                preserveScroll: true,
+                onFinish: clearPrefillQuery,
             },
         );
     });
@@ -192,10 +232,10 @@
 <div class="space-y-8">
     <section class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <div
-            class="seedr-card flex min-w-0 items-center gap-4 bg-[var(--seedr-paper)] p-5"
+            class="downloora-card flex min-w-0 items-center gap-4 bg-[var(--downloora-paper)] p-5"
         >
             <div
-                class="flex size-20 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-xl font-black text-[var(--seedr-ink)] shadow-[4px_4px_0_0_var(--foreground)]"
+                class="flex size-20 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-xl font-black text-[var(--downloora-ink)] shadow-[4px_4px_0_0_var(--foreground)]"
             >
                 {user.name.slice(0, 2).toUpperCase()}
             </div>
@@ -207,19 +247,19 @@
                     <button
                         type="button"
                         onclick={() => (planDialogOpen = true)}
-                        class="text-sm font-black uppercase text-[var(--seedr-orange)] underline decoration-2 underline-offset-4 hover:text-[var(--seedr-green)]"
+                        class="text-sm font-black uppercase text-[var(--downloora-orange)] underline decoration-2 underline-offset-4 hover:text-[var(--downloora-green)]"
                     >
                         Get more
                     </button>
                 </div>
-                <div class="seedr-progress mt-3 bg-background">
+                <div class="downloora-progress mt-3 bg-background">
                     <div
-                        class="seedr-progress-fill"
+                        class="downloora-progress-fill"
                         style={`width: ${quotaPercent}%`}
                     ></div>
                 </div>
                 <p class="mt-2 text-right text-sm font-semibold">
-                    <span class="text-[var(--seedr-green)]"
+                    <span class="text-[var(--downloora-green)]"
                         >{formatBytes(quota.used_bytes)}</span
                     >
                     <span class="text-muted-foreground">
@@ -230,32 +270,34 @@
         </div>
 
         <div
-            class="seedr-card flex min-w-0 items-center bg-[var(--seedr-paper)] p-4"
+            class="downloora-card flex min-w-0 items-center bg-[var(--downloora-paper)] p-4"
         >
             <TorrentSubmitForm
-                disabled={activeTorrent !== null || activeMediaImport !== null}
+                activeDownload={activeTorrent !== null ||
+                    activeMediaImport !== null}
                 initialUrl={prefillUrl}
+                {wishlistItems}
             />
         </div>
     </section>
 
     <section class="space-y-4 overflow-hidden">
         <div
-            class="seedr-table-head grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 text-sm font-black uppercase sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
+            class="downloora-table-head grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 text-sm font-black uppercase sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
         >
             <div class="flex items-center justify-center">
                 <span
-                    class="size-5 rounded border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)]"
+                    class="size-5 rounded border-2 border-[var(--downloora-ink)] bg-[var(--downloora-paper)]"
                 ></span>
             </div>
             <div class="flex items-center gap-6">
                 <span>Name</span>
                 <label
-                    class="hidden h-10 w-full max-w-72 items-center gap-2 rounded-full border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)] px-3 text-[var(--seedr-ink)] sm:flex"
+                    class="hidden h-10 w-full max-w-72 items-center gap-2 rounded-full border-2 border-[var(--downloora-ink)] bg-[var(--downloora-paper)] px-3 text-[var(--downloora-ink)] sm:flex"
                 >
                     <input
                         placeholder="Search your files"
-                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-[var(--seedr-ink)]/50"
+                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-[var(--downloora-ink)]/50"
                     />
                     <Search class="size-4" />
                 </label>

@@ -21,12 +21,12 @@
 
     const variants: Record<Variant, string> = {
         default:
-            'bg-[var(--seedr-orange)] text-[var(--seedr-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
+            'bg-[var(--downloora-orange)] text-[var(--downloora-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
         secondary:
-            'bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
+            'bg-[var(--downloora-lime)] text-[var(--downloora-ink)] shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
         ghost: 'border-transparent hover:border-foreground hover:bg-muted',
         destructive:
-            'border-[var(--seedr-danger)] bg-[var(--seedr-danger)] text-white shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
+            'border-[var(--downloora-danger)] bg-[var(--downloora-danger)] text-white shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)]',
         outline:
             'bg-card text-foreground shadow-[3px_3px_0_0_var(--foreground)] hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-muted hover:shadow-[1px_1px_0_0_var(--foreground)]',
         link: 'border-transparent text-primary underline-offset-4 hover:underline',

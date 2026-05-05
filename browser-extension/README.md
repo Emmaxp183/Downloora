@@ -1,6 +1,6 @@
-# Seedr Media Helper
+# Downloora Media Helper
 
-Seedr Media Helper is a browser extension designed to detect public media URLs on the active page and easily send them to your Seedr dashboard.
+Downloora Media Helper is a browser extension designed to detect public media URLs on the active page and easily send them to your Downloora dashboard.
 
 ## Why use this extension over tools like `yt-dlp`?
 
@@ -23,6 +23,6 @@ When extracting media from websites, command-line tools can sometimes struggle. 
 ## Usage
 
 1. Open a page containing video or audio.
-2. Click the Seedr Media Helper extension icon.
+2. Click the Downloora Media Helper extension icon.
 3. The extension will scan the page for available media formats.
-4. Click "Send" next to a media link to open your Seedr dashboard with the URL prefilled.
+4. Click the download button to start the media in Downloora, or the bookmark button to save it to your wishlist.

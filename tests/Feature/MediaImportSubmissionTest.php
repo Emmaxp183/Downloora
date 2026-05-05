@@ -5,6 +5,7 @@ use App\Jobs\DownloadMediaImport;
 use App\Jobs\InspectMediaImport;
 use App\Models\MediaImport;
 use App\Models\User;
+use App\Models\WishlistItem;
 use Illuminate\Support\Facades\Bus;
 
 test('verified users can submit a public media url through the shared input', function () {
@@ -31,7 +32,7 @@ test('verified users can submit a public media url through the shared input', fu
     Bus::assertDispatched(InspectMediaImport::class);
 });
 
-test('users with an active media import cannot submit another download', function () {
+test('users with an active media import save submitted media urls to wishlist', function () {
     Bus::fake();
 
     $user = User::factory()->create([
@@ -48,9 +49,16 @@ test('users with an active media import cannot submit another download', functio
             'url' => 'https://www.youtube.com/watch?v=another',
         ])
         ->assertRedirect(route('dashboard', absolute: false))
-        ->assertSessionHasErrors('url');
+        ->assertSessionHasNoErrors();
 
     expect($user->mediaImports()->count())->toBe(1);
+    $this->assertDatabaseHas('wishlist_items', [
+        'user_id' => $user->id,
+        'url' => 'https://www.youtube.com/watch?v=another',
+        'source_type' => 'media',
+        'source_domain' => 'www.youtube.com',
+    ]);
+    expect(WishlistItem::query()->count())->toBe(1);
     Bus::assertNotDispatched(InspectMediaImport::class);
 });
 

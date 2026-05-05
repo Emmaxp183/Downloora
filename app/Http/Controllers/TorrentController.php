@@ -11,6 +11,7 @@ use App\Jobs\InspectTorrentMetadata;
 use App\Models\MediaImport;
 use App\Models\Torrent;
 use App\Services\Torrents\QBittorrentClient;
+use App\Services\Wishlist\WishlistSaver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -20,22 +21,27 @@ class TorrentController extends Controller
     /**
      * Store a newly submitted torrent.
      */
-    public function store(StoreTorrentRequest $request): RedirectResponse
+    public function store(StoreTorrentRequest $request, WishlistSaver $wishlistSaver): RedirectResponse
     {
         $user = $request->user();
-        $activeErrorField = $request->filled('magnet_uri') && ! $request->filled('url')
-            ? 'magnet_uri'
-            : 'url';
+        $activeErrorField = match (true) {
+            $request->hasFile('torrent_file') => 'torrent_file',
+            $request->filled('magnet_uri') && ! $request->filled('url') => 'magnet_uri',
+            default => 'url',
+        };
 
-        if ($user->torrents()->active()->exists()) {
-            throw ValidationException::withMessages([
-                $activeErrorField => __('You already have an active download.'),
-            ]);
-        }
+        $hasActiveDownload = $user->torrents()->active()->exists()
+            || $user->mediaImports()->active()->exists();
 
-        if ($user->mediaImports()->active()->exists()) {
+        if ($hasActiveDownload) {
+            if ($request->downloadUrl() !== null) {
+                $wishlistSaver->save($user, $request->downloadUrl());
+
+                return to_route('dashboard');
+            }
+
             throw ValidationException::withMessages([
-                $activeErrorField => __('You already have an active download.'),
+                $activeErrorField => __('Upload torrent files after your active download finishes.'),
             ]);
         }
 

@@ -1,8 +1,7 @@
-const DEFAULT_SEEDR_URL = 'https://localhost:8443/dashboard';
+const DEFAULT_DOWNLOORA_URL = 'https://localhost:8443/dashboard';
 
 const statusElement = document.querySelector('#status');
 const listElement = document.querySelector('#media-list');
-const seedrUrlInput = document.querySelector('#seedr-url');
 const headerTitle = document.querySelector('#header-title');
 const headerSubtitle = document.querySelector('#header-subtitle');
 const headerThumbnail = document.querySelector('#header-thumbnail');
@@ -92,28 +91,35 @@ const mediaLabel = (item) => {
   }
 };
 
-const normalizeSeedrUrl = (value) => {
+const normalizeDownlooraUrl = (value) => {
   try {
-    const url = new URL(value || DEFAULT_SEEDR_URL);
+    const url = new URL(value || DEFAULT_DOWNLOORA_URL);
 
     if (!/^https?:$/i.test(url.protocol)) {
-      return DEFAULT_SEEDR_URL;
+      return DEFAULT_DOWNLOORA_URL;
     }
 
     return url.toString();
   } catch {
-    return DEFAULT_SEEDR_URL;
+    return DEFAULT_DOWNLOORA_URL;
   }
 };
 
-const openInSeedr = async (mediaUrl) => {
-  const seedrUrl = normalizeSeedrUrl(seedrUrlInput.value);
-  await chrome.storage.sync.set({ seedrUrl });
+const openInDownloora = async (mediaUrl, mode = 'download') => {
+  const { downlooraUrl: storedDownlooraUrl } = await chrome.storage.sync.get({
+    downlooraUrl: DEFAULT_DOWNLOORA_URL,
+  });
+  const downlooraUrl = normalizeDownlooraUrl(storedDownlooraUrl);
 
-  const target = new URL(seedrUrl);
+  const target = new URL(downlooraUrl);
   target.searchParams.set('url', mediaUrl);
   target.searchParams.set('source', 'browser-extension');
-  target.searchParams.set('auto', '1');
+
+  if (mode === 'wishlist') {
+    target.searchParams.set('wishlist', '1');
+  } else {
+    target.searchParams.set('auto', '1');
+  }
 
   await chrome.tabs.create({ url: target.toString() });
 };
@@ -127,7 +133,7 @@ const activeTab = async () => {
 const scanContentScript = async (tabId) => {
   try {
     const response = await chrome.tabs.sendMessage(tabId, {
-      type: 'SEEDR_SCAN_PAGE_MEDIA',
+      type: 'DOWNLOORA_SCAN_PAGE_MEDIA',
     });
 
     return response?.items ?? [];
@@ -138,7 +144,7 @@ const scanContentScript = async (tabId) => {
 
 const getNetworkMedia = async (tabId) => {
   const response = await chrome.runtime.sendMessage({
-    type: 'SEEDR_GET_TAB_MEDIA',
+    type: 'DOWNLOORA_GET_TAB_MEDIA',
     tabId,
   });
 
@@ -255,15 +261,27 @@ const renderMedia = (items) => {
 
     body.append(title, meta);
 
-    const button = document.createElement('button');
-    button.className = 'save-button';
-    button.type = 'button';
-    button.title = 'Send to Seedr';
-    button.setAttribute('aria-label', `Send ${mediaLabel(item)} to Seedr`);
-    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Save';
-    button.addEventListener('click', () => openInSeedr(item.url));
+    const actions = document.createElement('div');
+    actions.className = 'media-actions';
 
-    card.append(icon, body, button);
+    const wishlistButton = document.createElement('button');
+    wishlistButton.className = 'media-action-button wishlist-button';
+    wishlistButton.type = 'button';
+    wishlistButton.title = 'Save to wishlist';
+    wishlistButton.setAttribute('aria-label', `Save ${mediaLabel(item)} to wishlist`);
+    wishlistButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z"></path><path d="M12 7v6"></path><path d="M9 10h6"></path></svg>';
+    wishlistButton.addEventListener('click', () => openInDownloora(item.url, 'wishlist'));
+
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'media-action-button download-button';
+    downloadButton.type = 'button';
+    downloadButton.title = 'Download now';
+    downloadButton.setAttribute('aria-label', `Download ${mediaLabel(item)} now`);
+    downloadButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
+    downloadButton.addEventListener('click', () => openInDownloora(item.url, 'download'));
+
+    actions.append(wishlistButton, downloadButton);
+    card.append(icon, body, actions);
     listElement.append(card);
   }
 };
@@ -294,18 +312,6 @@ const scan = async () => {
 };
 
 const boot = async () => {
-  const { seedrUrl } = await chrome.storage.sync.get({
-    seedrUrl: DEFAULT_SEEDR_URL,
-  });
-
-  seedrUrlInput.value = seedrUrl;
-  
-  seedrUrlInput.addEventListener('change', () => {
-    chrome.storage.sync.set({
-      seedrUrl: normalizeSeedrUrl(seedrUrlInput.value),
-    });
-  });
-
   await scan();
 };
 

@@ -64,12 +64,12 @@
 
 <div>
     <div
-        class="seedr-row grid min-h-20 w-full grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
+        class="downloora-row grid min-h-20 w-full grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
     >
         <button
             type="button"
             onclick={() => (expanded = !expanded)}
-            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[2px_2px_0_0_var(--foreground)]"
+            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)] shadow-[2px_2px_0_0_var(--foreground)]"
             aria-expanded={expanded}
             title={expanded ? 'Close folder' : 'Open folder'}
         >
@@ -95,7 +95,7 @@
             {#if folder.download_url}
                 <a
                     href={folder.download_url}
-                    class="seedr-icon-button"
+                    class="downloora-icon-button"
                     title="Download folder as zip"
                 >
                     <Download class="size-4" />
@@ -106,7 +106,7 @@
                 <button
                     type="button"
                     onclick={() => (deleteDialogOpen = true)}
-                    class="seedr-icon-button seedr-danger"
+                    class="downloora-icon-button downloora-danger"
                     title="Delete folder"
                 >
                     <X class="size-4" />
@@ -116,7 +116,7 @@
             <button
                 type="button"
                 onclick={() => (expanded = !expanded)}
-                class="seedr-icon-button"
+                class="downloora-icon-button"
                 aria-expanded={expanded}
                 title={expanded ? 'Close folder' : 'Open folder'}
             >

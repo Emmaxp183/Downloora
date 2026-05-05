@@ -90,15 +90,15 @@
 }
 
 :root {
-    --seedr-cream: #f2efe9;
-    --seedr-paper: #fffaf0;
-    --seedr-ink: #1a261d;
-    --seedr-green: #3d6b4f;
-    --seedr-lime: #c9e265;
-    --seedr-orange: #ff6b4a;
-    --seedr-purple: #9d8bb5;
-    --seedr-muted: #e8e4db;
-    --seedr-danger: #d9342b;
+    --downloora-cream: #f2efe9;
+    --downloora-paper: #fffaf0;
+    --downloora-ink: #1a261d;
+    --downloora-green: #3d6b4f;
+    --downloora-lime: #c9e265;
+    --downloora-orange: #ff6b4a;
+    --downloora-purple: #9d8bb5;
+    --downloora-muted: #e8e4db;
+    --downloora-danger: #d9342b;
     --background: hsl(38 26% 93%);
     --foreground: hsl(132 19% 13%);
     --card: hsl(43 100% 97%);
@@ -181,89 +181,89 @@
 }
 
 @layer components {
-    .seedr-page {
+    .downloora-page {
         @apply min-h-screen bg-background text-foreground;
     }
 
-    .seedr-dots {
+    .downloora-dots {
         background-image: radial-gradient(currentColor 1px, transparent 1px);
         background-size: 18px 18px;
     }
 
-    .seedr-hard {
+    .downloora-hard {
         box-shadow: 6px 6px 0 0 var(--foreground);
     }
 
-    .seedr-hard-sm {
+    .downloora-hard-sm {
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-panel {
+    .downloora-panel {
         @apply rounded-[1.5rem] border-2 border-foreground bg-card text-card-foreground;
         box-shadow: 6px 6px 0 0 var(--foreground);
     }
 
-    .seedr-card {
+    .downloora-card {
         @apply rounded-[1.25rem] border-2 border-foreground bg-card text-card-foreground;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-pill {
+    .downloora-pill {
         @apply rounded-full border-2 border-foreground bg-card text-foreground;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-button {
-        @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[var(--seedr-orange)] px-5 py-2.5 text-sm font-bold text-[var(--seedr-ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
+    .downloora-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[var(--downloora-orange)] px-5 py-2.5 text-sm font-bold text-[var(--downloora-ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-button-secondary {
-        @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[var(--seedr-lime)] px-5 py-2.5 text-sm font-bold text-[var(--seedr-ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
+    .downloora-button-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[var(--downloora-lime)] px-5 py-2.5 text-sm font-bold text-[var(--downloora-ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-button-muted {
+    .downloora-button-muted {
         @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-card px-5 py-2.5 text-sm font-bold text-foreground transition hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-muted hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-icon-button {
-        @apply inline-flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-card text-foreground transition hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--seedr-lime)] hover:text-[var(--seedr-ink)] hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
+    .downloora-icon-button {
+        @apply inline-flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-card text-foreground transition hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--downloora-lime)] hover:text-[var(--downloora-ink)] hover:shadow-[1px_1px_0_0_var(--foreground)] disabled:pointer-events-none disabled:opacity-50;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-danger {
-        @apply border-[var(--seedr-danger)] bg-[var(--seedr-danger)] text-white;
+    .downloora-danger {
+        @apply border-[var(--downloora-danger)] bg-[var(--downloora-danger)] text-white;
     }
 
-    .seedr-danger:hover {
-        @apply bg-[var(--seedr-danger)] text-white;
+    .downloora-danger:hover {
+        @apply bg-[var(--downloora-danger)] text-white;
     }
 
-    .seedr-input {
-        @apply rounded-full border-2 border-foreground bg-card px-4 py-2.5 text-foreground shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[var(--seedr-lime)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
+    .downloora-input {
+        @apply rounded-full border-2 border-foreground bg-card px-4 py-2.5 text-foreground shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[var(--downloora-lime)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
     }
 
-    .seedr-table-head {
-        @apply rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-[var(--seedr-ink)];
+    .downloora-table-head {
+        @apply rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)];
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-row {
+    .downloora-row {
         @apply rounded-[1.25rem] border-2 border-foreground bg-card text-card-foreground transition hover:-translate-y-0.5 hover:bg-muted;
         box-shadow: 3px 3px 0 0 var(--foreground);
     }
 
-    .seedr-progress {
+    .downloora-progress {
         @apply h-2 overflow-hidden rounded-full border border-foreground bg-background;
     }
 
-    .seedr-progress-fill {
-        @apply h-full rounded-full bg-[var(--seedr-green)] transition-[width];
+    .downloora-progress-fill {
+        @apply h-full rounded-full bg-[var(--downloora-green)] transition-[width];
     }
 
-    .seedr-badge {
-        @apply rounded-full border border-foreground bg-[var(--seedr-lime)] px-3 py-1 text-xs font-bold tracking-[0.12em] text-[var(--seedr-ink)] uppercase;
+    .downloora-badge {
+        @apply rounded-full border border-foreground bg-[var(--downloora-lime)] px-3 py-1 text-xs font-bold tracking-[0.12em] text-[var(--downloora-ink)] uppercase;
     }
 }

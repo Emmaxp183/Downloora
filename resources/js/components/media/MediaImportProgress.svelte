@@ -146,7 +146,7 @@
     };
 </script>
 
-<div class="seedr-row p-4">
+<div class="downloora-row p-4">
     <div class="flex flex-col gap-4">
         <div class="flex items-start gap-4">
             {#if mediaImport.thumbnail_url}
@@ -157,7 +157,7 @@
                 />
             {:else}
                 <span
-                    class="flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-purple)] text-[var(--seedr-paper)] shadow-[2px_2px_0_0_var(--foreground)]"
+                    class="flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-purple)] text-[var(--downloora-paper)] shadow-[2px_2px_0_0_var(--foreground)]"
                 >
                     <Globe2 class="size-6" />
                 </span>
@@ -178,7 +178,7 @@
                             <button
                                 type="submit"
                                 disabled={processing}
-                                class="seedr-icon-button seedr-danger"
+                                class="downloora-icon-button downloora-danger"
                                 title="Cancel media import"
                             >
                                 <X class="size-4" />
@@ -188,11 +188,11 @@
                 </div>
 
                 {#if !ready}
-                    <div class="seedr-progress mt-3">
+                    <div class="downloora-progress mt-3">
                         <div
                             class={cn(
-                                'seedr-progress-fill',
-                                failed && 'bg-[var(--seedr-danger)]',
+                                'downloora-progress-fill',
+                                failed && 'bg-[var(--downloora-danger)]',
                             )}
                             style={`width: ${progress}%`}
                         ></div>
@@ -212,7 +212,7 @@
         {#if ready}
             <div class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm font-black uppercase tracking-[0.12em] text-[var(--seedr-green)]">
+                    <p class="text-sm font-black uppercase tracking-[0.12em] text-[var(--downloora-green)]">
                         Choose a version
                     </p>
                     <p class="text-xs font-medium text-muted-foreground">
@@ -239,7 +239,7 @@
                                         class="flex min-w-0 items-center gap-3 text-left disabled:opacity-50"
                                     >
                                         <span
-                                            class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-lime)] text-[var(--seedr-ink)]"
+                                            class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)]"
                                         >
                                             <Icon class="size-5" />
                                         </span>

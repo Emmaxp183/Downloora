@@ -169,17 +169,17 @@
     );
     const iconColor = $derived(
         {
-            archive: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
-            audio: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
-            code: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
-            document: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
-            ebook: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
-            image: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
-            json: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
-            spreadsheet: 'bg-[var(--seedr-green)] text-[var(--seedr-paper)]',
-            text: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
+            archive: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
+            audio: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
+            code: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
+            document: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
+            ebook: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
+            image: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
+            json: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
+            spreadsheet: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
+            text: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
             unknown: 'bg-muted text-foreground',
-            video: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
+            video: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
         }[iconKind],
     );
 
@@ -187,7 +187,7 @@
 </script>
 
 <div
-    class="seedr-row grid min-h-20 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
+    class="downloora-row grid min-h-20 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
 >
     <span
         class={`flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground shadow-[2px_2px_0_0_var(--foreground)] ${iconColor}`}
@@ -225,7 +225,7 @@
     </div>
 
     <div class="flex items-center justify-end gap-2 sm:justify-center">
-        <a href={file.download_url} class="seedr-icon-button" title="Download">
+        <a href={file.download_url} class="downloora-icon-button" title="Download">
             <Download class="size-4" />
         </a>
 
@@ -233,7 +233,7 @@
             <a
                 href={file.stream_url}
                 target="_blank"
-                class="seedr-icon-button"
+                class="downloora-icon-button"
                 title="Stream"
             >
                 <Play class="size-4" />
@@ -243,7 +243,7 @@
         <button
             type="button"
             onclick={() => (deleteDialogOpen = true)}
-            class="seedr-icon-button seedr-danger"
+            class="downloora-icon-button downloora-danger"
             title="Delete"
         >
             <X class="size-4" />

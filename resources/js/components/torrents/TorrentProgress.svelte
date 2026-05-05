@@ -30,11 +30,11 @@
 </script>
 
 <div
-    class="seedr-row grid min-h-20 grid-cols-[minmax(0,1fr)_7rem] items-center gap-4 px-4"
+    class="downloora-row grid min-h-20 grid-cols-[minmax(0,1fr)_7rem] items-center gap-4 px-4"
 >
     <div class="flex min-w-0 items-center gap-4">
         <span
-            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--seedr-purple)] text-[var(--seedr-paper)]"
+            class="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-purple)] text-[var(--downloora-paper)]"
         >
             <Activity class="size-5" />
         </span>
@@ -51,9 +51,9 @@
             >
                 {status}
             </p>
-            <div class="seedr-progress mt-2">
+            <div class="downloora-progress mt-2">
                 <div
-                    class="seedr-progress-fill"
+                    class="downloora-progress-fill"
                     style={`width: ${progress}%`}
                 ></div>
             </div>
@@ -68,7 +68,7 @@
         <button
             type="button"
             onclick={cancelDownload}
-            class="seedr-icon-button seedr-danger"
+            class="downloora-icon-button downloora-danger"
             title="Cancel download"
         >
             <X class="size-4" />

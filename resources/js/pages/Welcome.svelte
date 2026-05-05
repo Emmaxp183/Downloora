@@ -37,7 +37,7 @@
         {
             title: 'Add links three ways',
             date: 'MAY 4, 2026',
-            copy: 'Paste a magnet, upload a torrent file, or share a link from your phone. Seedr Drive keeps the add-to-cloud flow fast and predictable.',
+            copy: 'Paste a magnet, upload a torrent file, or share a link from your phone. Downloora keeps the add-to-cloud flow fast and predictable.',
             icon: Link2,
             color: 'bg-[#C9E265]',
         },
@@ -61,7 +61,7 @@
         {
             eyebrow: 'Cloud Fetch',
             title: 'Paste once. Let the server do the heavy lifting.',
-            copy: 'qBittorrent-nox downloads in Docker, then Seedr Drive moves completed files into RustFS and removes the torrent from the client.',
+            copy: 'qBittorrent-nox downloads in Docker, then Downloora moves completed files into RustFS and removes the torrent from the client.',
             icon: Download,
             color: 'bg-[#3D6B4F] text-[#F2EFE9]',
         },
@@ -118,7 +118,7 @@
     ];
 </script>
 
-<AppHead title="Seedr Drive" />
+<AppHead title="Downloora" />
 
 <svelte:head>
     <style>
@@ -168,7 +168,7 @@
             >
                 <AppLogoIcon class="size-5" />
                 <span class="text-sm font-semibold uppercase tracking-[0.16em]">
-                    Seedr
+                    Downloora
                 </span>
             </Link>
 
@@ -282,7 +282,7 @@
                                 <p
                                     class="font-semibold uppercase tracking-[0.12em]"
                                 >
-                                    Seedr Drive
+                                    Downloora
                                 </p>
                                 <p class="text-sm text-[#1A261D]/65">
                                     700 MB starter quota
@@ -511,7 +511,7 @@
                         <p
                             class="mt-4 text-center font-serif text-sm italic text-[#1A261D]/70"
                         >
-                            Built for Seedr Drive v1
+                            Built for Downloora v1
                         </p>
                     </div>
                 </div>
@@ -551,7 +551,7 @@
                     <div
                         class="border-t border-[#1A261D]/20 pt-4 text-xs font-semibold"
                     >
-                        Seedr Drive user
+                        Downloora user
                         <span class="block font-normal text-[#1A261D]/65">
                             Early access
                         </span>
@@ -567,7 +567,7 @@
     >
         <div class="relative z-10 mx-auto max-w-6xl text-center">
             <h2 class="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-                Get More with Seedr Premium
+                Get More with Downloora Premium
             </h2>
             <p class="mb-16 text-base text-[#1A261D]/70">
                 Upgrade anytime. Cancel anytime.
@@ -654,7 +654,7 @@
             <div class="flex items-center gap-3">
                 <AppLogoIcon class="size-5" />
                 <span class="font-semibold uppercase tracking-[0.16em]">
-                    Seedr Drive
+                    Downloora
                 </span>
             </div>
             <span class="text-[#F2EFE9]/60">

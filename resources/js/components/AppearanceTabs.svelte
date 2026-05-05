@@ -31,7 +31,7 @@
             onclick={() => handleAppearanceChange(value)}
             class="flex items-center rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition {appearance.value ===
             value
-                ? 'border-foreground bg-[var(--seedr-lime)] text-[var(--seedr-ink)]'
+                ? 'border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)]'
                 : 'border-transparent text-muted-foreground hover:border-foreground hover:bg-muted hover:text-foreground'}"
         >
             <Icon class="-ml-1 h-4 w-4" />

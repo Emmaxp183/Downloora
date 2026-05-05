@@ -47,7 +47,7 @@
 
 <h1 class="sr-only">Security settings</h1>
 
-<div class="seedr-card space-y-6 bg-card p-5">
+<div class="downloora-card space-y-6 bg-card p-5">
     <Heading
         variant="small"
         title="Update password"
@@ -112,7 +112,7 @@
 </div>
 
 {#if canManageTwoFactor}
-    <div class="seedr-card space-y-6 bg-card p-5">
+    <div class="downloora-card space-y-6 bg-card p-5">
         <Heading
             variant="small"
             title="Two-factor authentication"

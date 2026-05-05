@@ -39,7 +39,7 @@
 
 <h1 class="sr-only">Profile settings</h1>
 
-<div class="seedr-card flex flex-col gap-6 bg-card p-5">
+<div class="downloora-card flex flex-col gap-6 bg-card p-5">
     <Heading
         variant="small"
         title="Profile information"
@@ -92,7 +92,7 @@
 
                     {#if status === 'verification-link-sent'}
                         <div
-                            class="mt-2 text-sm font-bold text-[var(--seedr-green)]"
+                            class="mt-2 text-sm font-bold text-[var(--downloora-green)]"
                         >
                             A new verification link has been sent to your email
                             address.

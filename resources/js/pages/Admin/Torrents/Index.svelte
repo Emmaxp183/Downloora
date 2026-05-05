@@ -37,7 +37,7 @@
 <AppHead title="Admin torrents" />
 
 <div class="flex h-full flex-1 flex-col gap-5 overflow-x-auto">
-    <div class="seedr-card bg-[var(--seedr-paper)] p-5">
+    <div class="downloora-card bg-[var(--downloora-paper)] p-5">
         <h1 class="text-3xl font-black tracking-tight">Torrents</h1>
         <p class="text-sm font-medium text-muted-foreground">
             Review active, failed, and completed torrent jobs.
@@ -47,7 +47,7 @@
     <div class="space-y-4">
         {#each torrents as torrent (torrent.id)}
             <div
-                class="seedr-row grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_10rem]"
+                class="downloora-row grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_10rem]"
             >
                 <div class="min-w-0">
                     <p class="truncate text-base font-bold">
@@ -80,7 +80,7 @@
             </div>
         {:else}
             <div
-                class="seedr-card px-4 py-10 text-center text-sm text-muted-foreground"
+                class="downloora-card px-4 py-10 text-center text-sm text-muted-foreground"
             >
                 No torrents found.
             </div>

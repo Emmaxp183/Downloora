@@ -3,17 +3,30 @@
     import Link2 from 'lucide-svelte/icons/link-2';
     import Plus from 'lucide-svelte/icons/plus';
     import Upload from 'lucide-svelte/icons/upload';
+    import WishlistPanel from '@/components/wishlist/WishlistPanel.svelte';
     import { store } from '@/actions/App/Http/Controllers/TorrentController';
 
+    type WishlistItem = {
+        id: number;
+        url: string;
+        source_type: string;
+        source_domain: string | null;
+        title: string | null;
+        created_at?: string | null;
+    };
+
     let {
-        disabled = false,
+        activeDownload = false,
         initialUrl = '',
+        wishlistItems = [],
     }: {
-        disabled?: boolean;
+        activeDownload?: boolean;
         initialUrl?: string | null;
+        wishlistItems?: WishlistItem[];
     } = $props();
 
     let fileInput: HTMLInputElement;
+    let urlValue = $state('');
 
     const chooseTorrentFile = (): void => {
         fileInput?.click();
@@ -28,13 +41,19 @@
 
         submit();
     };
+
+    $effect(() => {
+        if (initialUrl && urlValue === '') {
+            urlValue = initialUrl;
+        }
+    });
 </script>
 
 <Form {...store.form()} resetOnSuccess class="w-full">
     {#snippet children({ errors, processing, progress, submit })}
         <div class="flex w-full items-stretch gap-3">
             <div
-                class="group flex min-h-14 min-w-0 flex-1 overflow-hidden rounded-full border-2 border-foreground bg-card shadow-[3px_3px_0_0_var(--foreground)] transition focus-within:bg-[var(--seedr-paper)]"
+                class="group flex min-h-14 min-w-0 flex-1 overflow-hidden rounded-full border-2 border-foreground bg-card shadow-[3px_3px_0_0_var(--foreground)] transition focus-within:bg-[var(--downloora-paper)]"
             >
                 <div
                     class="flex w-14 shrink-0 items-center justify-center text-muted-foreground"
@@ -44,21 +63,30 @@
                 <input
                     id="url"
                     name="url"
-                    value={initialUrl ?? ''}
+                    bind:value={urlValue}
                     placeholder="Paste magnet link or media URL here"
-                    disabled={disabled || processing}
+                    disabled={processing}
                     class="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     autocomplete="off"
                 />
                 <button
                     type="submit"
-                    disabled={disabled || processing}
-                    class="flex w-16 shrink-0 items-center justify-center border-l-2 border-foreground bg-[var(--seedr-orange)] text-[var(--seedr-ink)] transition hover:bg-[var(--seedr-lime)] disabled:cursor-not-allowed disabled:opacity-50"
-                    title="Add link"
+                    disabled={processing}
+                    class="flex w-16 shrink-0 items-center justify-center border-l-2 border-foreground bg-[var(--downloora-orange)] text-[var(--downloora-ink)] transition hover:bg-[var(--downloora-lime)] disabled:cursor-not-allowed disabled:opacity-50"
+                    title={activeDownload
+                        ? 'Save link to wishlist'
+                        : 'Add link'}
                 >
                     <Plus class="size-7 stroke-[3]" />
                 </button>
             </div>
+
+            <WishlistPanel
+                items={wishlistItems}
+                disabled={activeDownload}
+                currentUrl={urlValue}
+                {processing}
+            />
 
             <input
                 bind:this={fileInput}
@@ -66,20 +94,20 @@
                 name="torrent_file"
                 type="file"
                 accept=".torrent,application/x-bittorrent"
-                disabled={disabled || processing}
+                disabled={activeDownload || processing}
                 class="hidden"
                 onchange={(event) => submitTorrentFile(event, submit)}
             />
             <button
                 type="button"
-                disabled={disabled || processing}
+                disabled={activeDownload || processing}
                 onclick={chooseTorrentFile}
-                class="seedr-icon-button relative min-h-14 w-14 shrink-0 bg-[var(--seedr-lime)] text-[var(--seedr-ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                class="downloora-icon-button relative min-h-14 w-14 shrink-0 bg-[var(--downloora-lime)] text-[var(--downloora-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 title="Upload torrent file"
             >
                 <Upload class="size-7 stroke-[3]" />
                 <span
-                    class="absolute inset-x-2 bottom-1 h-1 rounded-full bg-[var(--seedr-green)]"
+                    class="absolute inset-x-2 bottom-1 h-1 rounded-full bg-[var(--downloora-green)]"
                     class:opacity-0={!processing}
                 ></span>
             </button>
@@ -101,9 +129,9 @@
             <p class="mt-2 text-sm font-medium text-muted-foreground">
                 Uploading torrent file {progress.percentage}%.
             </p>
-        {:else if disabled}
+        {:else if activeDownload}
             <p class="mt-2 text-sm font-medium text-muted-foreground">
-                Finish or cancel your active download before adding another.
+                Active download running. New links will be saved to your wishlist.
             </p>
         {/if}
     {/snippet}

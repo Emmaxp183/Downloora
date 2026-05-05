@@ -43,6 +43,19 @@ class DashboardController extends Controller
             'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport) : null,
             'prefillUrl' => $this->prefillUrl($request),
             'prefillAutoSubmit' => $this->prefillAutoSubmit($request),
+            'prefillWishlistSave' => $this->prefillWishlistSave($request),
+            'wishlistItems' => $user->wishlistItems()
+                ->latest()
+                ->limit(20)
+                ->get()
+                ->map(fn ($item): array => [
+                    'id' => $item->id,
+                    'url' => $item->url,
+                    'source_type' => $item->source_type,
+                    'source_domain' => $item->source_domain,
+                    'title' => $item->title,
+                    'created_at' => $item->created_at?->toISOString(),
+                ]),
             'recentTorrents' => $user->torrents()
                 ->latest()
                 ->limit(10)
@@ -110,5 +123,11 @@ class DashboardController extends Controller
     {
         return $request->string('source')->toString() === 'browser-extension'
             && $request->boolean('auto');
+    }
+
+    private function prefillWishlistSave(Request $request): bool
+    {
+        return $request->string('source')->toString() === 'browser-extension'
+            && $request->boolean('wishlist');
     }
 }

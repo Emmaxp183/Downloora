@@ -74,28 +74,28 @@
     );
 </script>
 
-<div class="seedr-page relative overflow-x-hidden">
+<div class="downloora-page relative overflow-x-hidden">
     <div
-        class="seedr-dots pointer-events-none fixed inset-0 opacity-[0.045]"
+        class="downloora-dots pointer-events-none fixed inset-0 opacity-[0.045]"
     ></div>
 
     <header class="sticky top-0 z-30 px-3 pt-3 sm:px-6">
         <div
-            class="seedr-pill relative mx-auto flex min-h-16 w-full max-w-7xl items-center gap-4 px-3 py-2 sm:px-4"
+            class="downloora-pill relative mx-auto flex min-h-16 w-full max-w-7xl items-center gap-4 px-3 py-2 sm:px-4"
         >
             <Link
                 href={toUrl(dashboard())}
-                class="flex min-w-0 items-center gap-3 rounded-full bg-foreground px-4 py-2 text-background transition hover:bg-[var(--seedr-orange)] hover:text-[var(--seedr-ink)]"
+                class="flex min-w-0 items-center gap-3 rounded-full bg-foreground px-4 py-2 text-background transition hover:bg-[var(--downloora-orange)] hover:text-[var(--downloora-ink)]"
             >
                 <span
-                    class="flex size-9 shrink-0 items-center justify-center rounded-full border border-background"
+                    class="flex size-9 shrink-0 items-center justify-center"
                 >
                     <AppLogoIcon class="size-6" />
                 </span>
                 <span class="hidden min-w-0 sm:block">
                     <span
                         class="block truncate text-sm font-semibold uppercase tracking-[0.16em]"
-                        >Seedr Drive</span
+                        >Downloora</span
                     >
                     <span class="block truncate text-xs opacity-70"
                         >Torrent cloud storage</span
@@ -114,7 +114,7 @@
                             class={cn(
                                 'group relative flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground',
                                 url.isCurrentUrl(item.href, url.currentUrl) &&
-                                    'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
+                                    'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
                             )}
                         >
                             {#if item.icon}
@@ -130,7 +130,7 @@
                     {#snippet children(props)}
                         <button
                             type="button"
-                            class="seedr-icon-button size-11 bg-[var(--seedr-lime)] text-sm font-bold text-[var(--seedr-ink)]"
+                            class="downloora-icon-button size-11 bg-[var(--downloora-lime)] text-sm font-bold text-[var(--downloora-ink)]"
                             onclick={props.onclick}
                             aria-expanded={props['aria-expanded']}
                             data-state={props['data-state']}

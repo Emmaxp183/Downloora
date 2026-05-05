@@ -36,7 +36,7 @@
 <AppHead title="Admin users" />
 
 <div class="flex h-full flex-1 flex-col gap-5 overflow-x-auto">
-    <div class="seedr-card bg-[var(--seedr-paper)] p-5">
+    <div class="downloora-card bg-[var(--downloora-paper)] p-5">
         <h1 class="text-3xl font-black tracking-tight">Users</h1>
         <p class="text-sm font-medium text-muted-foreground">
             Manage quotas and account state.
@@ -46,7 +46,7 @@
     <div class="space-y-4">
         {#each users as user (user.id)}
             <div
-                class="seedr-row grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_22rem]"
+                class="downloora-row grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_22rem]"
             >
                 <div class="min-w-0">
                     <p class="truncate text-base font-bold">

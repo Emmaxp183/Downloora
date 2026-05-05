@@ -121,11 +121,11 @@ const scanPageMedia = () => {
 };
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'SEEDR_SCAN_PAGE_MEDIA') {
+  if (message?.type !== 'DOWNLOORA_SCAN_PAGE_MEDIA') {
     return;
   }
 
   const items = scanPageMedia();
-  chrome.runtime.sendMessage({ type: 'SEEDR_REMEMBER_MEDIA', items });
+  chrome.runtime.sendMessage({ type: 'DOWNLOORA_REMEMBER_MEDIA', items });
   sendResponse({ items });
 });

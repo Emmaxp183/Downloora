@@ -27,6 +27,8 @@ class YtDlpClient
             '--no-playlist',
             '--skip-download',
             '--no-warnings',
+            '--extractor-args',
+            'generic:impersonate',
             $url,
         ], $this->inspectTimeout());
 
@@ -70,6 +72,8 @@ class YtDlpClient
             $directory,
             '--output',
             '%(title).180B [%(id)s].%(ext)s',
+            '--extractor-args',
+            'generic:impersonate',
             $url,
         ]);
 

@@ -26,7 +26,7 @@
 
     const classes = () =>
         cn(
-            'flex w-full cursor-pointer select-none items-center rounded-xl px-3 py-2 text-sm font-medium outline-none hover:bg-[var(--seedr-lime)] hover:text-[var(--seedr-ink)]',
+            'flex w-full cursor-pointer select-none items-center rounded-xl px-3 py-2 text-sm font-medium outline-none hover:bg-[var(--downloora-lime)] hover:text-[var(--downloora-ink)]',
             className,
         );
 </script>

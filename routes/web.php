@@ -9,6 +9,7 @@ use App\Http\Controllers\MediaImportController;
 use App\Http\Controllers\StoredFileAccessController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentFolderAccessController;
+use App\Http\Controllers\WishlistItemController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -26,6 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:12,1')
         ->name('media-imports.formats.store');
     Route::delete('media-imports/{mediaImport}', [MediaImportController::class, 'destroy'])->name('media-imports.destroy');
+    Route::post('wishlist', [WishlistItemController::class, 'store'])
+        ->middleware('throttle:12,1')
+        ->name('wishlist.store');
+    Route::delete('wishlist/{wishlistItem}', [WishlistItemController::class, 'destroy'])->name('wishlist.destroy');
     Route::get('library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('files/{storedFile}/download', [StoredFileAccessController::class, 'download'])
         ->middleware('signed')

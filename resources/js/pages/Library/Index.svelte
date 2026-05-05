@@ -73,7 +73,7 @@
 
 <div class="space-y-8">
     <section
-        class="seedr-card flex flex-col gap-4 bg-[var(--seedr-paper)] p-5 sm:flex-row sm:items-end sm:justify-between"
+        class="downloora-card flex flex-col gap-4 bg-[var(--downloora-paper)] p-5 sm:flex-row sm:items-end sm:justify-between"
     >
         <div>
             <h1 class="text-3xl font-black tracking-tight">Library</h1>
@@ -86,16 +86,16 @@
             <div
                 class="flex items-center justify-between text-sm font-semibold"
             >
-                <span class="text-[var(--seedr-green)]"
+                <span class="text-[var(--downloora-green)]"
                     >{formatBytes(quota.used_bytes)}</span
                 >
                 <span class="text-muted-foreground"
                     >{formatBytes(quota.quota_bytes)}</span
                 >
             </div>
-            <div class="seedr-progress mt-2">
+            <div class="downloora-progress mt-2">
                 <div
-                    class="seedr-progress-fill"
+                    class="downloora-progress-fill"
                     style={`width: ${quotaPercent}%`}
                 ></div>
             </div>
@@ -104,21 +104,21 @@
 
     <section class="space-y-4 overflow-hidden">
         <div
-            class="seedr-table-head grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 text-sm font-black uppercase sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
+            class="downloora-table-head grid min-h-14 grid-cols-[3.5rem_minmax(0,1fr)_7rem] items-center gap-4 px-4 text-sm font-black uppercase sm:grid-cols-[3.5rem_minmax(0,1fr)_8rem_9rem_12rem]"
         >
             <div class="flex items-center justify-center">
                 <span
-                    class="size-5 rounded border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)]"
+                    class="size-5 rounded border-2 border-[var(--downloora-ink)] bg-[var(--downloora-paper)]"
                 ></span>
             </div>
             <div class="flex items-center gap-6">
                 <span>Name</span>
                 <label
-                    class="hidden h-10 w-full max-w-72 items-center gap-2 rounded-full border-2 border-[var(--seedr-ink)] bg-[var(--seedr-paper)] px-3 text-[var(--seedr-ink)] sm:flex"
+                    class="hidden h-10 w-full max-w-72 items-center gap-2 rounded-full border-2 border-[var(--downloora-ink)] bg-[var(--downloora-paper)] px-3 text-[var(--downloora-ink)] sm:flex"
                 >
                     <input
                         placeholder="Search your files"
-                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-[var(--seedr-ink)]/50"
+                        class="min-w-0 flex-1 bg-transparent text-sm normal-case outline-none placeholder:text-[var(--downloora-ink)]/50"
                     />
                     <Search class="size-4" />
                 </label>

@@ -35,7 +35,7 @@
     const url = currentUrlState();
 </script>
 
-<div class="seedr-card bg-[var(--seedr-paper)] p-5 sm:p-6">
+<div class="downloora-card bg-[var(--downloora-paper)] p-5 sm:p-6">
     <Heading
         title="Settings"
         description="Manage your profile and account settings"

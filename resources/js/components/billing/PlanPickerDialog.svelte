@@ -44,7 +44,7 @@
             description: 'Perfect for steady weekend use',
             price: '6.95',
             icon: Flame,
-            iconClass: 'bg-[var(--seedr-orange)] text-[var(--seedr-ink)]',
+            iconClass: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
         },
         {
             id: 'pro',
@@ -53,7 +53,7 @@
             description: 'Perfect for large libraries & advanced networks',
             price: '9.95',
             icon: Sprout,
-            iconClass: 'bg-[var(--seedr-lime)] text-[var(--seedr-ink)]',
+            iconClass: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
             popular: true,
         },
         {
@@ -63,7 +63,7 @@
             description: 'Perfect for power users & hoarders',
             price: '19.95',
             icon: Cloud,
-            iconClass: 'bg-[var(--seedr-purple)] text-[var(--seedr-paper)]',
+            iconClass: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
         },
     ];
 </script>
@@ -80,13 +80,13 @@
                     Choose your plan
                 </DialogTitle>
                 <DialogDescription class="sr-only">
-                    Select a storage plan for your Seedr Drive account.
+                    Select a storage plan for your Downloora account.
                 </DialogDescription>
             </div>
             <button
                 type="button"
                 onclick={() => (open = false)}
-                class="seedr-icon-button"
+                class="downloora-icon-button"
                 title="Close"
             >
                 <X class="size-5" />
@@ -95,7 +95,7 @@
 
         <div class="space-y-6 px-6 py-6 sm:px-8">
             <p
-                class="text-sm font-black uppercase tracking-[0.18em] text-[var(--seedr-green)]"
+                class="text-sm font-black uppercase tracking-[0.18em] text-[var(--downloora-green)]"
             >
                 Available plans
             </p>
@@ -108,12 +108,12 @@
                         class={cn(
                             'relative grid w-full grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 rounded-[1.25rem] border-2 border-foreground bg-card p-4 text-left shadow-[3px_3px_0_0_var(--foreground)] transition hover:-translate-y-0.5 hover:bg-muted sm:grid-cols-[5rem_minmax(0,1fr)_8rem]',
                             selectedPlan === plan.id &&
-                                'bg-[var(--seedr-lime)] text-[var(--seedr-ink)] shadow-[6px_6px_0_0_var(--foreground)]',
+                                'bg-[var(--downloora-lime)] text-[var(--downloora-ink)] shadow-[6px_6px_0_0_var(--foreground)]',
                         )}
                     >
                         {#if plan.popular}
                             <span
-                                class="absolute -top-4 left-6 rounded-full border-2 border-foreground bg-[var(--seedr-purple)] px-4 py-1 text-xs font-black uppercase tracking-[0.08em] text-[var(--seedr-paper)]"
+                                class="absolute -top-4 left-6 rounded-full border-2 border-foreground bg-[var(--downloora-purple)] px-4 py-1 text-xs font-black uppercase tracking-[0.08em] text-[var(--downloora-paper)]"
                             >
                                 Most popular
                             </span>
@@ -169,7 +169,7 @@
                 <span>
                     <span class="block text-xl font-black">Bill yearly</span>
                     <span
-                        class="mt-1 flex items-center gap-2 text-base font-bold text-[var(--seedr-green)]"
+                        class="mt-1 flex items-center gap-2 text-base font-bold text-[var(--downloora-green)]"
                     >
                         <Check class="size-5" />
                         Save €19.90 per year
@@ -179,7 +179,7 @@
                     class={cn(
                         'flex h-9 w-16 items-center rounded-full p-1 transition',
                         billYearly
-                            ? 'justify-end border-2 border-foreground bg-[var(--seedr-lime)]'
+                            ? 'justify-end border-2 border-foreground bg-[var(--downloora-lime)]'
                             : 'justify-start border-2 border-foreground bg-muted',
                     )}
                 >
@@ -193,7 +193,7 @@
                 class="flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-muted-foreground"
             >
                 <Star
-                    class="size-5 fill-[var(--seedr-orange)] text-[var(--seedr-orange)]"
+                    class="size-5 fill-[var(--downloora-orange)] text-[var(--downloora-orange)]"
                 />
                 <span>Risk-Free</span>
                 <span>|</span>
@@ -205,19 +205,19 @@
             <button
                 type="button"
                 onclick={() => (open = false)}
-                class="seedr-button flex min-h-14 w-full text-xl"
+                class="downloora-button flex min-h-14 w-full text-xl"
             >
                 Continue
                 <ArrowRight class="size-6" />
             </button>
 
             <p class="text-center text-sm leading-6 text-muted-foreground">
-                By clicking continue you agree to Seedr's
-                <span class="font-semibold text-[var(--seedr-green)]"
+                By clicking continue you agree to Downloora's
+                <span class="font-semibold text-[var(--downloora-green)]"
                     >Terms of Service</span
                 >
                 and
-                <span class="font-semibold text-[var(--seedr-green)]"
+                <span class="font-semibold text-[var(--downloora-green)]"
                     >Privacy Policy</span
                 >.
             </p>

@@ -5,6 +5,7 @@ use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\WishlistItem;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
@@ -36,6 +37,13 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
     ]);
 
     StoredFile::factory()->for($user)->for($completedTorrent)->create(['name' => 'video.mp4']);
+    WishlistItem::factory()->for($user)->create([
+        'title' => 'Saved Later',
+        'url' => 'magnet:?xt=urn:btih:example',
+        'url_hash' => hash('sha256', 'magnet:?xt=urn:btih:example'),
+        'source_type' => 'magnet',
+        'source_domain' => null,
+    ]);
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -46,6 +54,9 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
             ->where('quota.quota_bytes', 1000)
             ->where('quota.remaining_bytes', 750)
             ->where('activeTorrent.name', 'Active Torrent')
+            ->has('wishlistItems', 1)
+            ->where('wishlistItems.0.title', 'Saved Later')
+            ->where('wishlistItems.0.source_type', 'magnet')
             ->has('recentTorrents', 2)
             ->has('recentFileFolders', 1)
             ->where('recentFileFolders.0.name', 'Stored Torrent')
@@ -67,6 +78,25 @@ test('dashboard accepts a safe browser extension url prefill', function () {
             ->component('Dashboard')
             ->where('prefillUrl', 'https://example.com/video.mp4')
             ->where('prefillAutoSubmit', true)
+            ->where('prefillWishlistSave', false)
+        );
+});
+
+test('dashboard accepts a safe browser extension wishlist prefill', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard', [
+            'url' => 'https://example.com/video.mp4',
+            'source' => 'browser-extension',
+            'wishlist' => '1',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('prefillUrl', 'https://example.com/video.mp4')
+            ->where('prefillAutoSubmit', false)
+            ->where('prefillWishlistSave', true)
         );
 });
 
@@ -80,5 +110,6 @@ test('dashboard ignores invalid browser extension url prefill values', function 
             ->component('Dashboard')
             ->where('prefillUrl', null)
             ->where('prefillAutoSubmit', false)
+            ->where('prefillWishlistSave', false)
         );
 });

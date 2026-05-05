@@ -82,7 +82,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type === 'SEEDR_REMEMBER_MEDIA' && sender.tab?.id) {
+  if (message?.type === 'DOWNLOORA_REMEMBER_MEDIA' && sender.tab?.id) {
     for (const item of message.items ?? []) {
       rememberMedia(sender.tab.id, item);
     }
@@ -92,7 +92,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
-  if (message?.type === 'SEEDR_GET_TAB_MEDIA') {
+  if (message?.type === 'DOWNLOORA_GET_TAB_MEDIA') {
     sendResponse({
       items: (mediaByTab.get(message.tabId) ?? []).filter((item) => !isIgnoredMediaUrl(item.url)),
     });

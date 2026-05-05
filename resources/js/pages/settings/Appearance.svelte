@@ -21,7 +21,7 @@
 
 <h1 class="sr-only">Appearance settings</h1>
 
-<div class="seedr-card space-y-6 bg-card p-5">
+<div class="downloora-card space-y-6 bg-card p-5">
     <Heading
         variant="small"
         title="Appearance settings"

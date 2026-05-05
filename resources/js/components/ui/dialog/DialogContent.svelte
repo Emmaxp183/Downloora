@@ -15,7 +15,7 @@
     <div class="fixed inset-0 z-50 flex items-center justify-center">
         <button
             type="button"
-            class="fixed inset-0 bg-[var(--seedr-ink)]/55"
+            class="fixed inset-0 bg-[var(--downloora-ink)]/55"
             aria-label="Close"
             onclick={close}
         ></button>

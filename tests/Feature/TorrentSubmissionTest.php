@@ -5,6 +5,7 @@ use App\Enums\TorrentStatus;
 use App\Jobs\InspectTorrentMetadata;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\WishlistItem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -93,7 +94,7 @@ test('uploaded torrent files must have a torrent extension', function () {
     Bus::assertNotDispatched(InspectTorrentMetadata::class);
 });
 
-test('users with an active torrent cannot submit another torrent', function () {
+test('users with an active torrent save submitted magnet links to wishlist', function () {
     Bus::fake();
 
     $user = User::factory()->create();
@@ -106,8 +107,34 @@ test('users with an active torrent cannot submit another torrent', function () {
             'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
         ])
         ->assertRedirect(route('dashboard', absolute: false))
-        ->assertSessionHasErrors('magnet_uri');
+        ->assertSessionHasNoErrors();
 
     expect($user->torrents()->count())->toBe(1);
+    $this->assertDatabaseHas('wishlist_items', [
+        'user_id' => $user->id,
+        'url' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
+        'source_type' => 'magnet',
+    ]);
+    Bus::assertNotDispatched(InspectTorrentMetadata::class);
+});
+
+test('users with an active torrent still cannot upload a torrent file', function () {
+    Bus::fake();
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+
+    Torrent::factory()->for($user)->create(['status' => TorrentStatus::Downloading]);
+
+    $this->actingAs($user)
+        ->from(route('dashboard'))
+        ->post('/torrents', [
+            'torrent_file' => UploadedFile::fake()->create('example.torrent', 12),
+        ])
+        ->assertRedirect(route('dashboard', absolute: false))
+        ->assertSessionHasErrors('torrent_file');
+
+    expect($user->torrents()->count())->toBe(1)
+        ->and(WishlistItem::query()->count())->toBe(0);
     Bus::assertNotDispatched(InspectTorrentMetadata::class);
 });
