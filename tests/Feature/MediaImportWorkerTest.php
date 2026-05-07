@@ -7,6 +7,7 @@ use App\Models\MediaImport;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Services\Media\YtDlpClient;
+use App\Services\Storage\ObjectStorageUploader;
 use Illuminate\Support\Facades\Storage;
 
 test('it inspects media urls and stores available formats', function () {
@@ -158,6 +159,17 @@ test('it falls back to a short list when common video formats are unavailable', 
         ->and($formats[0]['id'])->toBe('file');
 });
 
+test('it uses configured concurrent fragments for media downloads', function () {
+    config(['media.yt_dlp.concurrent_fragments' => 12]);
+
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+    $command = $method->invoke($client, 'https://example.com/video', 'best', '/tmp/downloora-media-test');
+
+    expect($command)->toContain('--concurrent-fragments')
+        ->and($command)->toContain('12');
+});
+
 test('it downloads selected media into object storage', function () {
     Storage::fake('s3');
 
@@ -193,6 +205,16 @@ test('it downloads selected media into object storage', function () {
         }
     });
 
+    app()->instance(ObjectStorageUploader::class, new class extends ObjectStorageUploader
+    {
+        public function uploadFile(string $key, string $localPath): string
+        {
+            Storage::disk('s3')->put($key, file_get_contents($localPath));
+
+            return 'video/mp4';
+        }
+    });
+
     app()->call([new DownloadMediaImport($mediaImport), 'handle']);
 
     $mediaImport->refresh();
@@ -200,7 +222,8 @@ test('it downloads selected media into object storage', function () {
     expect($mediaImport->status)->toBe(MediaImportStatus::Completed)
         ->and($mediaImport->progress)->toBe(100)
         ->and(StoredFile::query()->count())->toBe(1)
-        ->and(StorageUsageEvent::query()->sum('delta_bytes'))->toBe(11);
+        ->and(StorageUsageEvent::query()->sum('delta_bytes'))->toBe(11)
+        ->and(StoredFile::query()->first()->mime_type)->toBe('video/mp4');
 
     Storage::disk('s3')->assertExists("users/{$mediaImport->user_id}/media/{$mediaImport->id}/Example-video/Example-video-abc123.mp4");
 });

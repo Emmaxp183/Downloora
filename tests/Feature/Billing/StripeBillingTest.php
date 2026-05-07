@@ -2,7 +2,9 @@
 
 use App\Listeners\SyncStripeSubscriptionQuota;
 use App\Models\User;
+use App\Services\Billing\StripeSubscriptionSyncer;
 use Laravel\Cashier\Events\WebhookHandled;
+use Stripe\Subscription as StripeSubscription;
 
 test('checkout requires a configured stripe price id', function () {
     config(['billing.plans.basic.stripe_price_id' => null]);
@@ -75,4 +77,41 @@ test('cancelled subscription webhooks reset the user storage quota', function ()
     ]));
 
     expect($user->refresh()->storage_quota_bytes)->toBe(734003200);
+});
+
+test('stripe subscription sync creates the local subscription and updates quota', function () {
+    config([
+        'billing.plans.basic.stripe_price_id' => 'price_downloora_basic_monthly',
+        'billing.plans.basic.quota_bytes' => 50 * 1024 * 1024 * 1024,
+    ]);
+
+    $user = User::factory()->create([
+        'stripe_id' => 'cus_downloora_sync',
+        'storage_quota_bytes' => 734003200,
+    ]);
+
+    $stripeSubscription = StripeSubscription::constructFrom([
+        'id' => 'sub_downloora_sync',
+        'customer' => 'cus_downloora_sync',
+        'status' => 'active',
+        'items' => [
+            'data' => [
+                [
+                    'id' => 'si_downloora_sync',
+                    'quantity' => 1,
+                    'price' => [
+                        'id' => 'price_downloora_basic_monthly',
+                        'product' => 'prod_downloora_basic',
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $synced = app(StripeSubscriptionSyncer::class)->syncStripeSubscription($user, $stripeSubscription);
+
+    expect($synced)->toBeTrue()
+        ->and($user->refresh()->storage_quota_bytes)->toBe(50 * 1024 * 1024 * 1024)
+        ->and($user->subscription(config('billing.subscription_type'))->stripe_status)->toBe('active')
+        ->and($user->subscription(config('billing.subscription_type'))->stripe_price)->toBe('price_downloora_basic_monthly');
 });

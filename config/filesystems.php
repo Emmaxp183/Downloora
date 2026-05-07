@@ -15,6 +15,10 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'import_upload_concurrency' => env('IMPORT_S3_CONCURRENCY', 8),
+
+    'import_upload_part_size_mb' => env('IMPORT_S3_PART_SIZE_MB', 16),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks

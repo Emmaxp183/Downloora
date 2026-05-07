@@ -55,13 +55,13 @@ FROM php-base AS app
 COPY --from=vendor /var/www/html/vendor ./vendor
 COPY . .
 COPY --from=frontend /var/www/html/public/build ./public/build
-COPY docker/php/entrypoint.sh /usr/local/bin/seedr-entrypoint
+COPY docker/php/entrypoint.sh /usr/local/bin/downloora-entrypoint
 
-RUN chmod +x /usr/local/bin/seedr-entrypoint \
+RUN chmod +x /usr/local/bin/downloora-entrypoint \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
-ENTRYPOINT ["seedr-entrypoint"]
+ENTRYPOINT ["downloora-entrypoint"]
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

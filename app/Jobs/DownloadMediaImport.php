@@ -7,11 +7,11 @@ use App\Models\MediaImport;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Services\Media\YtDlpClient;
+use App\Services\Storage\ObjectStorageUploader;
 use App\Services\Storage\StorageQuota;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
@@ -22,7 +22,7 @@ class DownloadMediaImport implements ShouldQueue
 
     public function __construct(public MediaImport $mediaImport) {}
 
-    public function handle(YtDlpClient $client, StorageQuota $quota): void
+    public function handle(YtDlpClient $client, StorageQuota $quota, ObjectStorageUploader $uploader): void
     {
         $mediaImport = $this->mediaImport->fresh(['user']);
 
@@ -98,23 +98,9 @@ class DownloadMediaImport implements ShouldQueue
             ])->save();
 
             $s3Key = $this->s3Key($mediaImport, $localPath);
-            $stream = fopen($localPath, 'rb');
+            $mimeType = $uploader->uploadFile($s3Key, $localPath);
 
-            if (! is_resource($stream)) {
-                throw new RuntimeException('Unable to read downloaded media.');
-            }
-
-            try {
-                $stored = Storage::disk('s3')->put($s3Key, $stream);
-            } finally {
-                fclose($stream);
-            }
-
-            if (! $stored) {
-                throw new RuntimeException('Unable to store downloaded media in object storage.');
-            }
-
-            DB::transaction(function () use ($mediaImport, $s3Key, $localPath, $sizeBytes): void {
+            DB::transaction(function () use ($mediaImport, $s3Key, $localPath, $sizeBytes, $mimeType): void {
                 $storedFile = StoredFile::create([
                     'user_id' => $mediaImport->user_id,
                     'torrent_id' => null,
@@ -124,7 +110,7 @@ class DownloadMediaImport implements ShouldQueue
                     's3_key' => $s3Key,
                     'original_path' => 'Media/'.$this->folderName($mediaImport).'/'.$this->safeFilename($localPath),
                     'name' => $this->safeFilename($localPath),
-                    'mime_type' => Storage::disk('s3')->mimeType($s3Key),
+                    'mime_type' => $mimeType,
                     'size_bytes' => (int) $sizeBytes,
                 ]);
 

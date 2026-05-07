@@ -6,6 +6,7 @@ use App\Enums\TorrentStatus;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Models\Torrent;
+use App\Services\Storage\ObjectStorageUploader;
 use App\Services\Torrents\QBittorrentClient;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +14,6 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use RuntimeException;
 use Throwable;
 
 class ImportCompletedTorrent implements ShouldQueue
@@ -28,7 +28,7 @@ class ImportCompletedTorrent implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(QBittorrentClient $client): void
+    public function handle(QBittorrentClient $client, ObjectStorageUploader $uploader): void
     {
         $torrent = $this->torrent->fresh(['files', 'user']);
 
@@ -48,25 +48,10 @@ class ImportCompletedTorrent implements ShouldQueue
 
                 $s3Key = $this->s3Key($torrent, $torrentFile->path);
 
-                $sourceStream = Storage::disk('local')->readStream($sourcePath);
-
-                if (! is_resource($sourceStream)) {
-                    throw new FileNotFoundException("Missing completed file [{$torrentFile->path}].");
-                }
-
-                $stored = Storage::disk('s3')->put($s3Key, $sourceStream);
-
-                if (is_resource($sourceStream)) {
-                    fclose($sourceStream);
-                }
-
-                if (! $stored) {
-                    throw new RuntimeException("Unable to store completed file [{$torrentFile->path}] in object storage.");
-                }
-
                 $storedFiles[] = [
                     'torrent_file' => $torrentFile,
                     's3_key' => $s3Key,
+                    'mime_type' => $uploader->uploadFile($s3Key, Storage::disk('local')->path($sourcePath)),
                 ];
             }
 
@@ -82,7 +67,7 @@ class ImportCompletedTorrent implements ShouldQueue
                         's3_key' => $storedFile['s3_key'],
                         'original_path' => $torrentFile->path,
                         'name' => basename($torrentFile->path),
-                        'mime_type' => Storage::disk('s3')->mimeType($storedFile['s3_key']),
+                        'mime_type' => $storedFile['mime_type'],
                         'size_bytes' => $torrentFile->size_bytes,
                     ]);
 

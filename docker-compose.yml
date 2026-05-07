@@ -1,3 +1,5 @@
+name: downloora
+
 services:
   app:
     build:
@@ -11,8 +13,8 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-seedr}
-      DB_USERNAME: ${DB_USERNAME:-seedr}
+      DB_DATABASE: ${DB_DATABASE:-downloora}
+      DB_USERNAME: ${DB_USERNAME:-downloora}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
@@ -20,7 +22,7 @@ services:
       FILESYSTEM_DISK: s3
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-rustfsadmin}
-      AWS_BUCKET: ${AWS_BUCKET:-seedr}
+      AWS_BUCKET: ${AWS_BUCKET:-downloora}
       AWS_ENDPOINT: http://rustfs:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       QBITTORRENT_BASE_URL: http://qbittorrent:8080
@@ -39,7 +41,7 @@ services:
       - laravel-storage:/var/www/html/storage
       - qbittorrent-downloads:/var/www/html/storage/app/private/qbittorrent
     networks:
-      - seedr
+      - downloora
 
   queue:
     build:
@@ -52,8 +54,8 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-seedr}
-      DB_USERNAME: ${DB_USERNAME:-seedr}
+      DB_DATABASE: ${DB_DATABASE:-downloora}
+      DB_USERNAME: ${DB_USERNAME:-downloora}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
@@ -61,13 +63,19 @@ services:
       FILESYSTEM_DISK: s3
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-rustfsadmin}
-      AWS_BUCKET: ${AWS_BUCKET:-seedr}
+      AWS_BUCKET: ${AWS_BUCKET:-downloora}
       AWS_ENDPOINT: http://rustfs:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       QBITTORRENT_BASE_URL: http://qbittorrent:8080
       QBITTORRENT_USERNAME: ${QBITTORRENT_USERNAME:-admin}
       QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD:-adminadmin}
-    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--timeout=120"]
+      QUEUE_WORKER_PROCESSES: ${QUEUE_WORKER_PROCESSES:-3}
+    command:
+      [
+        "sh",
+        "-c",
+        "for worker in $$(seq 1 $${QUEUE_WORKER_PROCESSES:-3}); do php artisan queue:work redis --sleep=1 --tries=3 --timeout=3600 & done; wait -n",
+      ]
     depends_on:
       app:
         condition: service_started
@@ -77,7 +85,7 @@ services:
       - laravel-storage:/var/www/html/storage
       - qbittorrent-downloads:/var/www/html/storage/app/private/qbittorrent
     networks:
-      - seedr
+      - downloora
 
   scheduler:
     build:
@@ -90,8 +98,8 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-seedr}
-      DB_USERNAME: ${DB_USERNAME:-seedr}
+      DB_DATABASE: ${DB_DATABASE:-downloora}
+      DB_USERNAME: ${DB_USERNAME:-downloora}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
@@ -99,7 +107,7 @@ services:
       FILESYSTEM_DISK: s3
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-rustfsadmin}
-      AWS_BUCKET: ${AWS_BUCKET:-seedr}
+      AWS_BUCKET: ${AWS_BUCKET:-downloora}
       AWS_ENDPOINT: http://rustfs:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
     command: ["sh", "-c", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
@@ -109,7 +117,7 @@ services:
     volumes:
       - laravel-storage:/var/www/html/storage
     networks:
-      - seedr
+      - downloora
 
   caddy:
     image: caddy:2-alpine
@@ -118,9 +126,9 @@ services:
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
       CADDY_EMAIL: ${CADDY_EMAIL:-admin@example.com}
     ports:
-      - "${CADDY_HTTP_PORT:-80}:80"
-      - "${CADDY_HTTPS_PORT:-443}:443"
-      - "${CADDY_HTTPS_PORT:-443}:443/udp"
+      - "${CADDY_HTTP_PORT:-8080}:80"
+      - "${CADDY_HTTPS_PORT:-8443}:443"
+      - "${CADDY_HTTPS_PORT:-8443}:443/udp"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -129,14 +137,14 @@ services:
       app:
         condition: service_started
     networks:
-      - seedr
+      - downloora
 
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-seedr}
-      POSTGRES_USER: ${DB_USERNAME:-seedr}
+      POSTGRES_DB: ${DB_DATABASE:-downloora}
+      POSTGRES_USER: ${DB_USERNAME:-downloora}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -148,7 +156,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - seedr
+      - downloora
 
   redis:
     image: redis:8-alpine
@@ -162,7 +170,7 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - seedr
+      - downloora
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -173,12 +181,15 @@ services:
       TZ: ${TZ:-UTC}
       WEBUI_PORT: 8080
       TORRENTING_PORT: ${QBITTORRENT_TORRENTING_PORT:-6881}
+    ports:
+      - "${QBITTORRENT_TORRENTING_PORT:-6881}:${QBITTORRENT_TORRENTING_PORT:-6881}/tcp"
+      - "${QBITTORRENT_TORRENTING_PORT:-6881}:${QBITTORRENT_TORRENTING_PORT:-6881}/udp"
     volumes:
       - qbittorrent-config:/config
       - qbittorrent-downloads:/downloads
       - ./docker/qbittorrent/qBittorrent.conf:/config/qBittorrent/qBittorrent.conf
     networks:
-      - seedr
+      - downloora
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -195,18 +206,34 @@ services:
     volumes:
       - rustfs-data:/data
     networks:
-      - seedr
+      - downloora
 
 volumes:
   laravel-storage:
+    external: true
+    name: seedr_laravel-storage
   postgres-data:
+    external: true
+    name: seedr_postgres-data
   redis-data:
+    external: true
+    name: seedr_redis-data
   qbittorrent-config:
+    external: true
+    name: seedr_qbittorrent-config
   qbittorrent-downloads:
+    external: true
+    name: seedr_qbittorrent-downloads
   rustfs-data:
+    external: true
+    name: seedr_rustfs-data
   caddy-data:
+    external: true
+    name: seedr_caddy-data
   caddy-config:
+    external: true
+    name: seedr_caddy-config
 
 networks:
-  seedr:
+  downloora:
     driver: bridge

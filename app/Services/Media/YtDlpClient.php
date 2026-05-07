@@ -59,23 +59,7 @@ class YtDlpClient
         }
 
         $before = $this->files($directory);
-        $process = new Process([
-            $this->binary(),
-            '--ignore-config',
-            '--no-playlist',
-            '--newline',
-            '--format',
-            $formatSelector,
-            '--merge-output-format',
-            'mp4',
-            '--paths',
-            $directory,
-            '--output',
-            '%(title).180B [%(id)s].%(ext)s',
-            '--extractor-args',
-            'generic:impersonate',
-            $url,
-        ]);
+        $process = new Process($this->downloadCommand($url, $formatSelector, $directory));
 
         $process->setTimeout($this->downloadTimeout());
         $process->run(function (string $type, string $buffer) use ($progress): void {
@@ -261,6 +245,38 @@ class YtDlpClient
     /**
      * @return array<int, string>
      */
+    private function downloadCommand(string $url, string $formatSelector, string $directory): array
+    {
+        return [
+            $this->binary(),
+            '--ignore-config',
+            '--no-playlist',
+            '--newline',
+            '--concurrent-fragments',
+            (string) $this->concurrentFragments(),
+            '--retries',
+            (string) config('media.yt_dlp.retries', 10),
+            '--fragment-retries',
+            (string) config('media.yt_dlp.fragment_retries', 10),
+            '--socket-timeout',
+            (string) config('media.yt_dlp.socket_timeout', 30),
+            '--format',
+            $formatSelector,
+            '--merge-output-format',
+            'mp4',
+            '--paths',
+            $directory,
+            '--output',
+            '%(title).180B [%(id)s].%(ext)s',
+            '--extractor-args',
+            'generic:impersonate',
+            $url,
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
     private function files(string $directory): array
     {
         return glob(rtrim($directory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'*') ?: [];
@@ -291,5 +307,10 @@ class YtDlpClient
     private function downloadTimeout(): int
     {
         return (int) config('media.yt_dlp.download_timeout', 3600);
+    }
+
+    private function concurrentFragments(): int
+    {
+        return max(1, (int) config('media.yt_dlp.concurrent_fragments', 8));
     }
 }

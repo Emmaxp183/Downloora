@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Billing\StripeSubscriptionSyncer;
 use App\Support\BillingPlans;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,11 +94,18 @@ class BillingController extends Controller
         return Inertia::location($user->billingPortalUrl(route('dashboard')));
     }
 
-    public function success(): RedirectResponse
+    public function success(Request $request, StripeSubscriptionSyncer $stripeSubscriptionSyncer): RedirectResponse
     {
+        if ($request->filled('session_id')) {
+            $stripeSubscriptionSyncer->syncFromCheckoutSession(
+                $request->user(),
+                $request->string('session_id')->toString(),
+            );
+        }
+
         return redirect()
             ->route('dashboard')
-            ->with('status', 'Payment received. Your subscription will update as soon as Stripe confirms it.');
+            ->with('status', 'Payment received. Your plan is now active.');
     }
 
     public function cancel(): RedirectResponse
