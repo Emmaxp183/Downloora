@@ -112,6 +112,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER || 'root' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -123,16 +126,28 @@ jobs:
           find /tmp/downloora-k8s -type f -name '*.yaml' -exec sed -i "s|image: downloora-app|image: ${{ needs.build.outputs.image_ref }}|g" {} +
 
       - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
+          if [ -z "${VPS_HOST:-}" ]; then
+            echo "::error::Missing VPS_HOST. Add it as a GitHub Actions secret or variable with your VPS public IP address."
+            exit 1
+          fi
+
+          if [ -z "${VPS_SSH_KEY:-}" ]; then
+            echo "::error::Missing VPS_SSH_KEY. Add it as a GitHub Actions secret containing the private SSH key for the VPS."
+            exit 1
+          fi
+
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload manifests
         run: |
-          ssh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'rm -rf ~/downloora-k8s && mkdir -p ~/downloora-k8s'
-          scp -r /tmp/downloora-k8s/* "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/downloora-k8s/"
+          ssh "$VPS_USER@$VPS_HOST" 'rm -rf ~/downloora-k8s && mkdir -p ~/downloora-k8s'
+          scp -r /tmp/downloora-k8s/* "$VPS_USER@$VPS_HOST:~/downloora-k8s/"
 
       - name: Deploy to VPS Kubernetes
         env:
@@ -142,7 +157,7 @@ jobs:
           ghcr_username_b64="$(printf '%s' "${GHCR_USERNAME:-}" | base64 -w0)"
           ghcr_token_b64="$(printf '%s' "${GHCR_TOKEN:-}" | base64 -w0)"
 
-          ssh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+          ssh "$VPS_USER@$VPS_HOST" \
             "GHCR_USERNAME_B64=${ghcr_username_b64} GHCR_TOKEN_B64=${ghcr_token_b64} bash -s" <<'REMOTE'
           set -euo pipefail
 
