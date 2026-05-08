@@ -8,10 +8,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - downloora.example.com
+        - downloora.com
       secretName: downloora-tls
   rules:
-    - host: downloora.example.com
+    - host: downloora.com
       http:
         paths:
           - path: /

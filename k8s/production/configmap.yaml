@@ -6,7 +6,7 @@ data:
   APP_NAME: Downloora
   APP_ENV: production
   APP_DEBUG: "false"
-  APP_URL: https://downloora.example.com
+  APP_URL: https://downloora.com
   APP_LOCALE: en
   APP_FALLBACK_LOCALE: en
   APP_FAKER_LOCALE: en_US
@@ -24,7 +24,7 @@ data:
   SESSION_LIFETIME: "120"
   SESSION_ENCRYPT: "true"
   SESSION_SECURE_COOKIE: "true"
-  SESSION_DOMAIN: downloora.example.com
+  SESSION_DOMAIN: downloora.com
   BROADCAST_CONNECTION: log
   CACHE_STORE: redis
   QUEUE_CONNECTION: redis
