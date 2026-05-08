@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: downloora-migrate
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: downloora-migrate
+        app.kubernetes.io/part-of: downloora
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:17-alpine
+          command:
+            - sh
+            - -c
+            - until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_DATABASE"; do sleep 2; done
+          envFrom:
+            - configMapRef:
+                name: downloora-config
+            - secretRef:
+                name: downloora-secrets
+      containers:
+        - name: migrate
+          image: downloora-app
+          imagePullPolicy: IfNotPresent
+          command:
+            - php
+            - artisan
+            - migrate
+            - --force
+            - --no-interaction
+          env:
+            - name: ENSURE_S3_BUCKET
+              value: "true"
+          envFrom:
+            - configMapRef:
+                name: downloora-config
+            - secretRef:
+                name: downloora-secrets
+          volumeMounts:
+            - name: private-storage
+              mountPath: /var/www/html/storage/app/private
+      volumes:
+        - name: private-storage
+          persistentVolumeClaim:
+            claimName: downloora-private-storage

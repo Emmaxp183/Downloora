@@ -9,7 +9,7 @@ if [ -n "${APP_KEY:-}" ]; then
     php artisan config:cache --no-interaction || true
 fi
 
-if [ "${FILESYSTEM_DISK:-}" = "s3" ]; then
+if [ "${ENSURE_S3_BUCKET:-false}" = "true" ] && [ "${FILESYSTEM_DISK:-}" = "s3" ]; then
     attempts=0
 
     until php artisan storage:ensure-s3-bucket --no-interaction; do

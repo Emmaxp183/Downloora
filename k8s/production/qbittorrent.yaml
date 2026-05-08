@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-config
+data:
+  qBittorrent.conf: |
+    [LegalNotice]
+    Accepted=true
+
+    [BitTorrent]
+    Session\AddExtensionToIncompleteFiles=true
+    Session\AsyncIOThreadsCount=16
+    Session\DHTEnabled=true
+    Session\DefaultSavePath=/downloads
+    Session\DiskCacheSize=1024
+    Session\DiskIOType=1
+    Session\ExcludedFileNames=
+    Session\GlobalMaxInactiveSeedingMinutes=-1
+    Session\GlobalMaxRatio=-1
+    Session\GlobalMaxSeedingMinutes=-1
+    Session\LSDEnabled=true
+    Session\MaxActiveCheckingTorrents=5
+    Session\MaxActiveDownloads=20
+    Session\MaxActiveTorrents=30
+    Session\MaxActiveUploads=10
+    Session\MaxConnections=3000
+    Session\MaxConnectionsPerTorrent=800
+    Session\MaxUploads=200
+    Session\MaxUploadsPerTorrent=80
+    Session\PeXEnabled=true
+    Session\Port=6881
+    Session\QueueingSystemEnabled=true
+    Session\SSL\Port=6882
+    Session\TempPath=/downloads/.incomplete
+    Session\TempPathEnabled=true
+    Session\uTPRateLimited=false
+
+    [Network]
+    PortForwardingEnabled=true
+
+    [Preferences]
+    Advanced\AnnounceToAllTrackers=true
+    Advanced\AnnounceToAllTiers=true
+    Advanced\osCache=true
+    Connection\PortRangeMin=6881
+    Connection\ResolvePeerCountries=false
+    Connection\UPnP=true
+    Downloads\SavePath=/downloads
+    WebUI\Address=*
+    WebUI\HostHeaderValidation=false
+    WebUI\LocalHostAuth=false
+    WebUI\Password_PBKDF2="@ByteArray(ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==)"
+    WebUI\Port=8080
+    WebUI\ServerDomains=*
+    WebUI\Username=admin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+spec:
+  selector:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/part-of: downloora
+  ports:
+    - name: webui
+      port: 8080
+      targetPort: webui
+    - name: torrent-tcp
+      port: 6881
+      targetPort: torrent-tcp
+      protocol: TCP
+    - name: torrent-udp
+      port: 6881
+      targetPort: torrent-udp
+      protocol: UDP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qbittorrent
+      app.kubernetes.io/part-of: downloora
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: qbittorrent
+        app.kubernetes.io/part-of: downloora
+    spec:
+      containers:
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: TZ
+            - name: WEBUI_PORT
+              value: "8080"
+            - name: TORRENTING_PORT
+              value: "6881"
+          ports:
+            - name: webui
+              containerPort: 8080
+            - name: torrent-tcp
+              containerPort: 6881
+              protocol: TCP
+            - name: torrent-udp
+              containerPort: 6881
+              protocol: UDP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: webui
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: qbittorrent-downloads
+              mountPath: /downloads
+            - name: qbittorrent-config-file
+              mountPath: /config/qBittorrent/qBittorrent.conf
+              subPath: qBittorrent.conf
+      volumes:
+        - name: qbittorrent-downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads
+        - name: qbittorrent-config-file
+          configMap:
+            name: qbittorrent-config

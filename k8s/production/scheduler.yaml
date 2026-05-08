@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: downloora-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: downloora-scheduler
+      app.kubernetes.io/part-of: downloora
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: downloora-scheduler
+        app.kubernetes.io/part-of: downloora
+    spec:
+      containers:
+        - name: scheduler
+          image: downloora-app
+          imagePullPolicy: IfNotPresent
+          command:
+            - php
+            - artisan
+            - schedule:work
+            - --no-interaction
+          envFrom:
+            - configMapRef:
+                name: downloora-config
+            - secretRef:
+                name: downloora-secrets

@@ -1,10 +1,11 @@
-FROM php:8.4-cli-alpine AS php-base
+FROM php:8.4-fpm-alpine AS php-base
 
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
     bash \
     curl \
+    nginx \
     icu-dev \
     libzip-dev \
     oniguruma-dev \
@@ -56,12 +57,13 @@ COPY --from=vendor /var/www/html/vendor ./vendor
 COPY . .
 COPY --from=frontend /var/www/html/public/build ./public/build
 COPY docker/php/entrypoint.sh /usr/local/bin/downloora-entrypoint
+COPY docker/php/nginx.conf /etc/nginx/http.d/default.conf
 
 RUN chmod +x /usr/local/bin/downloora-entrypoint \
-    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache /run/nginx \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
 ENTRYPOINT ["downloora-entrypoint"]
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
