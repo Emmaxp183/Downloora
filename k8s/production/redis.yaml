@@ -33,15 +33,9 @@ spec:
           image: redis:8-alpine
           imagePullPolicy: IfNotPresent
           command:
-            - sh
-            - -c
-            - redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
-          env:
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: downloora-secrets
-                  key: REDIS_PASSWORD
+            - redis-server
+            - --appendonly
+            - "yes"
           ports:
             - name: redis
               containerPort: 6379
@@ -50,7 +44,7 @@ spec:
               command:
                 - sh
                 - -c
-                - redis-cli -a "$REDIS_PASSWORD" ping
+                - redis-cli ping
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
@@ -58,7 +52,7 @@ spec:
               command:
                 - sh
                 - -c
-                - redis-cli -a "$REDIS_PASSWORD" ping
+                - redis-cli ping
             initialDelaySeconds: 20
             periodSeconds: 20
           volumeMounts:

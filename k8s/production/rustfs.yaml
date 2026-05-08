@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio
+  name: rustfs
 spec:
   selector:
-    app.kubernetes.io/name: minio
+    app.kubernetes.io/name: rustfs
     app.kubernetes.io/part-of: downloora
   ports:
     - name: api
@@ -17,63 +17,62 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: minio
+  name: rustfs
 spec:
-  serviceName: minio
+  serviceName: rustfs
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: minio
+      app.kubernetes.io/name: rustfs
       app.kubernetes.io/part-of: downloora
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: minio
+        app.kubernetes.io/name: rustfs
         app.kubernetes.io/part-of: downloora
     spec:
       containers:
-        - name: minio
-          image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+        - name: rustfs
+          image: rustfs/rustfs:latest
           imagePullPolicy: IfNotPresent
           args:
-            - server
             - /data
-            - --console-address
-            - :9001
           env:
-            - name: MINIO_ROOT_USER
+            - name: RUSTFS_ADDRESS
+              value: ":9000"
+            - name: RUSTFS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: downloora-secrets
                   key: AWS_ACCESS_KEY_ID
-            - name: MINIO_ROOT_PASSWORD
+            - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: downloora-secrets
                   key: AWS_SECRET_ACCESS_KEY
+            - name: RUSTFS_CONSOLE_ENABLE
+              value: "true"
           ports:
             - name: api
               containerPort: 9000
             - name: console
               containerPort: 9001
           readinessProbe:
-            httpGet:
-              path: /minio/health/ready
+            tcpSocket:
               port: api
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /minio/health/live
+            tcpSocket:
               port: api
             initialDelaySeconds: 30
             periodSeconds: 20
           volumeMounts:
-            - name: minio-data
+            - name: rustfs-data
               mountPath: /data
   volumeClaimTemplates:
     - metadata:
-        name: minio-data
+        name: rustfs-data
       spec:
         accessModes:
           - ReadWriteOnce

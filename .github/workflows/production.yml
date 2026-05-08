@@ -178,6 +178,10 @@ jobs:
             exit 1
           fi
 
+          kubectl -n downloora patch secret downloora-secrets \
+            --type=json \
+            -p='[{"op":"remove","path":"/data/REDIS_PASSWORD"}]' >/dev/null 2>&1 || true
+
           if [ -n "${GHCR_USERNAME:-}" ] && [ -n "${GHCR_TOKEN:-}" ]; then
             kubectl -n downloora create secret docker-registry ghcr-credentials \
               --docker-server=ghcr.io \
@@ -191,10 +195,12 @@ jobs:
 
           kubectl -n downloora delete job downloora-migrate --ignore-not-found
           kubectl apply -k ~/downloora-k8s
+          kubectl -n downloora delete statefulset minio --ignore-not-found
+          kubectl -n downloora delete service minio --ignore-not-found
 
           kubectl -n downloora rollout status statefulset/postgres --timeout=300s
           kubectl -n downloora rollout status statefulset/redis --timeout=180s
-          kubectl -n downloora rollout status statefulset/minio --timeout=300s
+          kubectl -n downloora rollout status statefulset/rustfs --timeout=300s
           kubectl -n downloora rollout status deployment/qbittorrent --timeout=300s
           kubectl -n downloora wait --for=condition=complete job/downloora-migrate --timeout=300s
           kubectl -n downloora rollout status deployment/downloora-app --timeout=300s
