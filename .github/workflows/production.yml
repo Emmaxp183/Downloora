@@ -139,6 +139,7 @@ jobs:
             echo "::error::VPS_HOST must contain your VPS public IP address, for example 94.75.223.239."
             exit 1
           fi
+          echo "VPS_HOST=$VPS_HOST" >> "$GITHUB_ENV"
 
           if [ -z "${VPS_SSH_KEY:-}" ]; then
             echo "::error::Missing VPS_SSH_KEY. Add it as a GitHub Actions secret containing the private SSH key for the VPS."
