@@ -36,6 +36,8 @@ spec:
                 name: downloora-config
             - secretRef:
                 name: downloora-secrets
+            - secretRef:
+                name: downloora-env
           ports:
             - name: http
               containerPort: 8000

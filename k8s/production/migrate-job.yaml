@@ -23,6 +23,8 @@ spec:
                 name: downloora-config
             - secretRef:
                 name: downloora-secrets
+            - secretRef:
+                name: downloora-env
       containers:
         - name: migrate
           image: downloora-app
@@ -41,6 +43,8 @@ spec:
                 name: downloora-config
             - secretRef:
                 name: downloora-secrets
+            - secretRef:
+                name: downloora-env
           volumeMounts:
             - name: private-storage
               mountPath: /var/www/html/storage/app/private

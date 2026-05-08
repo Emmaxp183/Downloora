@@ -28,3 +28,5 @@ spec:
                 name: downloora-config
             - secretRef:
                 name: downloora-secrets
+            - secretRef:
+                name: downloora-env
