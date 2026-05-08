@@ -13,9 +13,9 @@
 
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
+    import { destroy } from '@/actions/App/Http/Controllers/Admin/TorrentController';
     import AppHead from '@/components/AppHead.svelte';
     import { Button } from '@/components/ui/button';
-    import { destroy } from '@/actions/App/Http/Controllers/Admin/TorrentController';
 
     type Torrent = {
         id: number;

@@ -15,9 +15,9 @@
     import UserMenuContent from '@/components/UserMenuContent.svelte';
     import { currentUrlState } from '@/lib/currentUrl.svelte';
     import { cn, toUrl } from '@/lib/utils';
+    import { dashboard } from '@/routes';
     import { index as adminTorrents } from '@/routes/admin/torrents';
     import { index as adminUsers } from '@/routes/admin/users';
-    import { dashboard } from '@/routes';
     import { index as library } from '@/routes/library';
     import { edit as editProfile } from '@/routes/profile';
     import type { BreadcrumbItem, NavItem } from '@/types';
@@ -87,9 +87,7 @@
                 href={toUrl(dashboard())}
                 class="flex min-w-0 items-center gap-3 rounded-full bg-foreground px-4 py-2 text-background transition hover:bg-[var(--downloora-orange)] hover:text-[var(--downloora-ink)]"
             >
-                <span
-                    class="flex size-9 shrink-0 items-center justify-center"
-                >
+                <span class="flex size-9 shrink-0 items-center justify-center">
                     <AppLogoIcon class="size-6" />
                 </span>
                 <span class="hidden min-w-0 sm:block">

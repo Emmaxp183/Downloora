@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
+    import { page } from '@inertiajs/svelte';
     import BookOpen from 'lucide-svelte/icons/book-open';
     import Files from 'lucide-svelte/icons/files';
     import FolderGit2 from 'lucide-svelte/icons/folder-git-2';
@@ -20,11 +21,10 @@
         SidebarMenuItem,
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
+    import { dashboard } from '@/routes';
     import { index as adminTorrents } from '@/routes/admin/torrents';
     import { index as adminUsers } from '@/routes/admin/users';
     import { index as library } from '@/routes/library';
-    import { dashboard } from '@/routes';
-    import { page } from '@inertiajs/svelte';
     import type { NavItem } from '@/types';
 
     let {

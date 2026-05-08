@@ -2,8 +2,6 @@
     import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from 'lucide-svelte/icons/arrow-right';
     import Check from 'lucide-svelte/icons/check';
-    import ChefHat from 'lucide-svelte/icons/chef-hat';
-    import Cloud from 'lucide-svelte/icons/cloud';
     import Crown from 'lucide-svelte/icons/crown';
     import Download from 'lucide-svelte/icons/download';
     import Flame from 'lucide-svelte/icons/flame';
@@ -17,7 +15,6 @@
     import Star from 'lucide-svelte/icons/star';
     import Upload from 'lucide-svelte/icons/upload';
     import Users from 'lucide-svelte/icons/users';
-    import Zap from 'lucide-svelte/icons/zap';
     import AppHead from '@/components/AppHead.svelte';
     import AppLogoIcon from '@/components/AppLogoIcon.svelte';
     import { toUrl } from '@/lib/utils';
@@ -376,7 +373,7 @@
         <div
             class="flex w-max animate-[welcome-marquee_30s_linear_infinite] whitespace-nowrap"
         >
-            {#each Array(2) as _}
+            {#each Array(2) as _, index (index)}
                 <span
                     class="flex items-center gap-6 px-6 text-2xl font-semibold uppercase tracking-tight text-[#F2EFE9] md:text-3xl"
                 >
@@ -409,7 +406,7 @@
         </div>
 
         <div class="grid gap-8 md:grid-cols-3">
-            {#each articles as article, index}
+            {#each articles as article, index (article.title)}
                 <article
                     class={`rounded-2xl border-2 border-[#1A261D] bg-[#F2EFE9] p-8 shadow-[6px_6px_0_0_#1A261D] transition hover:-translate-y-2 ${index === 1 ? 'md:translate-y-4' : ''}`}
                 >
@@ -452,7 +449,7 @@
                 <div
                     class="hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-linear-to-r from-transparent via-[#F2EFE9]/30 to-transparent"
                 ></div>
-                {#each ['Email & Password', 'Add a link', 'Download files'] as step, index}
+                {#each ['Email & Password', 'Add a link', 'Download files'] as step, index (step)}
                     <div
                         class="relative flex flex-col items-center text-center"
                     >
@@ -484,7 +481,7 @@
     </section>
 
     <section id="features" class="mx-auto max-w-6xl space-y-24 px-6 py-24">
-        {#each features as feature, index}
+        {#each features as feature, index (feature.title)}
             <div class="grid items-center gap-12 lg:grid-cols-2">
                 <div class={index % 2 === 1 ? 'lg:order-2' : ''}>
                     <div
@@ -543,12 +540,12 @@
         <div
             class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-6 px-6 md:flex-row"
         >
-            {#each ['Pasted a link and the folder was ready in my cloud.', 'Everything is private to my account and easy to delete.', 'Folder zip download made the whole flow feel complete.'] as review, index}
+            {#each ['Pasted a link and the folder was ready in my cloud.', 'Everything is private to my account and easy to delete.', 'Folder zip download made the whole flow feel complete.'] as review, index (review)}
                 <div
                     class={`w-full max-w-sm rounded-xl border-2 border-[#1A261D] p-6 text-left shadow-[6px_6px_0_0_#000] transition hover:rotate-0 ${index === 1 ? 'bg-[#C9E265] md:mt-8 -rotate-2' : 'bg-[#F2EFE9] rotate-2'}`}
                 >
                     <div class="mb-4 flex text-[#FF6B4A]">
-                        {#each Array(5) as _}
+                        {#each Array(5) as _, starIndex (starIndex)}
                             <Star class="size-4 fill-current" />
                         {/each}
                     </div>
@@ -581,7 +578,7 @@
             </p>
 
             <div class="grid gap-6 text-left md:grid-cols-3">
-                {#each plans as plan}
+                {#each plans as plan (plan.name)}
                     <div
                         class={`relative flex flex-col rounded-2xl border-2 border-[#1A261D] p-8 shadow-[6px_6px_0_0_#1A261D] transition hover:-translate-y-1 ${plan.color}`}
                     >
@@ -605,7 +602,7 @@
                         <ul
                             class="mb-8 flex-1 space-y-4 text-sm text-[#1A261D]/80"
                         >
-                            {#each plan.items as item}
+                            {#each plan.items as item (item)}
                                 <li class="flex items-start gap-3">
                                     <Check
                                         class="mt-0.5 size-5 text-[#3D6B4F]"

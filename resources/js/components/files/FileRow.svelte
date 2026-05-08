@@ -13,8 +13,8 @@
     import FileVideo from 'lucide-svelte/icons/file-video';
     import Play from 'lucide-svelte/icons/play';
     import X from 'lucide-svelte/icons/x';
-    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import { destroy } from '@/actions/App/Http/Controllers/StoredFileAccessController';
+    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
 
     type StoredFile = {
         id: number;
@@ -172,11 +172,13 @@
             archive: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
             audio: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
             code: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
-            document: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
+            document:
+                'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
             ebook: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
             image: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
             json: 'bg-[var(--downloora-lime)] text-[var(--downloora-ink)]',
-            spreadsheet: 'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
+            spreadsheet:
+                'bg-[var(--downloora-green)] text-[var(--downloora-paper)]',
             text: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
             unknown: 'bg-muted text-foreground',
             video: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
@@ -225,7 +227,11 @@
     </div>
 
     <div class="flex items-center justify-end gap-2 sm:justify-center">
-        <a href={file.download_url} class="downloora-icon-button" title="Download">
+        <a
+            href={file.download_url}
+            class="downloora-icon-button"
+            title="Download"
+        >
             <Download class="size-4" />
         </a>
 

@@ -5,8 +5,8 @@
     import Link2 from 'lucide-svelte/icons/link-2';
     import Play from 'lucide-svelte/icons/play';
     import X from 'lucide-svelte/icons/x';
-    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import { destroy } from '@/actions/App/Http/Controllers/WishlistItemController';
+    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
     import {
         DropdownMenu,
         DropdownMenuContent,

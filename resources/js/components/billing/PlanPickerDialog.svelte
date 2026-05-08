@@ -49,7 +49,8 @@
             description: 'Perfect for steady weekend use',
             price: '5.99',
             icon: Flame,
-            iconClass: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
+            iconClass:
+                'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
         },
         {
             id: 'pro',
@@ -68,7 +69,8 @@
             description: 'Perfect for power users & hoarders',
             price: '20',
             icon: Cloud,
-            iconClass: 'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
+            iconClass:
+                'bg-[var(--downloora-purple)] text-[var(--downloora-paper)]',
         },
     ];
 
@@ -209,9 +211,9 @@
                 >
                     <Check class="size-4" />
                 </span>
-                Monthly billing is handled securely by Stripe in EUR. You can
-                pay with card or iDEAL and manage cards, invoices, and
-                cancellation in Stripe Billing.
+                Monthly billing is handled securely by Stripe in EUR. You can pay
+                with card or iDEAL and manage cards, invoices, and cancellation in
+                Stripe Billing.
             </div>
 
             {#if planError}

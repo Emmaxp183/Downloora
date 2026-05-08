@@ -43,10 +43,7 @@
 
     <div class="flex flex-col gap-8 lg:flex-row">
         <aside class="w-full max-w-xl lg:w-56">
-            <nav
-                class="flex flex-col gap-2"
-                aria-label="Settings"
-            >
+            <nav class="flex flex-col gap-2" aria-label="Settings">
                 {#each sidebarNavItems as item (toUrl(item.href))}
                     <Button
                         variant={url.isCurrentUrl(item.href, url.currentUrl)

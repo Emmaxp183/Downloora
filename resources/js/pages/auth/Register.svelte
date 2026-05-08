@@ -36,7 +36,9 @@
         Continue with Google
     </a>
 
-    <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <div
+        class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+    >
         <span class="h-px flex-1 bg-border"></span>
         <span>Email signup</span>
         <span class="h-px flex-1 bg-border"></span>

@@ -13,10 +13,10 @@
 
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
+    import { updateQuota } from '@/actions/App/Http/Controllers/Admin/UserController';
     import AppHead from '@/components/AppHead.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
-    import { updateQuota } from '@/actions/App/Http/Controllers/Admin/UserController';
 
     type User = {
         id: number;

@@ -3,10 +3,10 @@
     import Download from 'lucide-svelte/icons/download';
     import Folder from 'lucide-svelte/icons/folder';
     import X from 'lucide-svelte/icons/x';
-    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
-    import FileRow from '@/components/files/FileRow.svelte';
     import { destroy as destroyMediaFolder } from '@/actions/App/Http/Controllers/MediaFolderAccessController';
     import { destroy as destroyTorrentFolder } from '@/actions/App/Http/Controllers/TorrentFolderAccessController';
+    import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
+    import FileRow from '@/components/files/FileRow.svelte';
 
     type StoredFile = {
         id: number;

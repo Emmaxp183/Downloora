@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { Form } from '@inertiajs/svelte';
     import type { FormComponentProps } from '@inertiajs/core';
+    import { Form } from '@inertiajs/svelte';
     import Button from '@/components/ui/button/Button.svelte';
     import {
         Dialog,

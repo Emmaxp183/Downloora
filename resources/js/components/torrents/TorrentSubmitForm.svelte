@@ -1,11 +1,11 @@
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
-    import { tick } from 'svelte';
     import Link2 from 'lucide-svelte/icons/link-2';
     import Plus from 'lucide-svelte/icons/plus';
     import Upload from 'lucide-svelte/icons/upload';
-    import WishlistPanel from '@/components/wishlist/WishlistPanel.svelte';
+    import { tick } from 'svelte';
     import { store } from '@/actions/App/Http/Controllers/TorrentController';
+    import WishlistPanel from '@/components/wishlist/WishlistPanel.svelte';
 
     type WishlistItem = {
         id: number;
@@ -67,7 +67,9 @@
         }
 
         try {
-            const clipboardValue = (await navigator.clipboard.readText()).trim();
+            const clipboardValue = (
+                await navigator.clipboard.readText()
+            ).trim();
 
             if (
                 !clipboardValue ||
@@ -181,7 +183,8 @@
             </p>
         {:else if activeDownload}
             <p class="mt-2 text-sm font-medium text-muted-foreground">
-                Active download running. New links will be saved to your wishlist.
+                Active download running. New links will be saved to your
+                wishlist.
             </p>
         {/if}
     {/snippet}

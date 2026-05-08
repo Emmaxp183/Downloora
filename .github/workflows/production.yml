@@ -50,6 +50,9 @@ jobs:
           cp .env.example .env
           php artisan key:generate --no-interaction
 
+      - name: Generate Wayfinder routes
+        run: php artisan wayfinder:generate --with-form --no-interaction
+
       - name: Check frontend types
         run: npm run types:check
 

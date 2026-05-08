@@ -105,7 +105,9 @@
     const bestFormat = (formats: MediaFormat[]): MediaFormat | null => {
         return (
             formats
-                .toSorted((first, second) => formatScore(second) - formatScore(first))
+                .toSorted(
+                    (first, second) => formatScore(second) - formatScore(first),
+                )
                 .at(0) ?? null
         );
     };
@@ -167,8 +169,11 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <p class="truncate text-base font-bold">{title}</p>
-                        <p class="mt-1 truncate text-xs font-medium text-muted-foreground">
-                            {mediaImport.source_domain ?? mediaImport.source_url}
+                        <p
+                            class="mt-1 truncate text-xs font-medium text-muted-foreground"
+                        >
+                            {mediaImport.source_domain ??
+                                mediaImport.source_url}
                             · {status}
                         </p>
                     </div>
@@ -198,7 +203,9 @@
                         ></div>
                     </div>
                     <div class="mt-2 flex items-center justify-between gap-3">
-                        <p class="text-xs font-medium capitalize text-muted-foreground">
+                        <p
+                            class="text-xs font-medium capitalize text-muted-foreground"
+                        >
                             {mediaImport.error_message ?? status}
                         </p>
                         <span class="text-xs font-bold tabular-nums">
@@ -212,7 +219,9 @@
         {#if ready}
             <div class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm font-black uppercase tracking-[0.12em] text-[var(--downloora-green)]">
+                    <p
+                        class="text-sm font-black uppercase tracking-[0.12em] text-[var(--downloora-green)]"
+                    >
                         Choose a version
                     </p>
                     <p class="text-xs font-medium text-muted-foreground">
@@ -244,19 +253,25 @@
                                             <Icon class="size-5" />
                                         </span>
                                         <span class="min-w-0">
-                                            <span class="block truncate text-sm font-bold">
+                                            <span
+                                                class="block truncate text-sm font-bold"
+                                            >
                                                 {format.quality}
                                                 {#if format.extension}
                                                     · {format.extension.toUpperCase()}
                                                 {/if}
                                             </span>
-                                            <span class="block truncate text-xs font-medium text-muted-foreground">
+                                            <span
+                                                class="block truncate text-xs font-medium text-muted-foreground"
+                                            >
                                                 {format.type}
                                                 · {formatDuration(
                                                     format.duration_seconds ??
                                                         mediaImport.duration_seconds,
                                                 )}
-                                                · {formatBytes(format.size_bytes)}
+                                                · {formatBytes(
+                                                    format.size_bytes,
+                                                )}
                                                 {#if format.source}
                                                     · {format.source}
                                                 {/if}
@@ -274,7 +289,9 @@
                                     </Button>
 
                                     {#if errors.format_id}
-                                        <p class="sm:col-span-2 text-xs font-semibold text-destructive">
+                                        <p
+                                            class="sm:col-span-2 text-xs font-semibold text-destructive"
+                                        >
                                             {errors.format_id}
                                         </p>
                                     {/if}
