@@ -53,6 +53,15 @@ jobs:
       - name: Generate Wayfinder routes
         run: php artisan wayfinder:generate --with-form --no-interaction
 
+      - name: Check PHP formatting
+        run: composer lint:check
+
+      - name: Check frontend formatting
+        run: npm run format:check
+
+      - name: Check frontend lint
+        run: npm run lint:check
+
       - name: Check frontend types
         run: npm run types:check
 
@@ -62,11 +71,11 @@ jobs:
       - name: Run tests
         run: php artisan test --compact
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Render Kubernetes manifests
-        run: kubectl kustomize k8s/production > /tmp/downloora-production.yaml
+      - name: Validate production Compose config
+        run: |
+          APP_IMAGE=ghcr.io/example/downloora docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+          APP_IMAGE=ghcr.io/example/downloora docker compose -f docker-compose.yml -f docker-compose.prod.yml config --format json \
+            | jq -e '.services.app.build == null and .services.queue.build == null and .services.scheduler.build == null'
 
   build:
     needs: verify
@@ -95,7 +104,7 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push image
+      - name: Build and push app image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -113,17 +122,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/downloora' }}
       VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER || 'root' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Render image into manifests
-        run: |
-          rm -rf /tmp/downloora-k8s
-          cp -R k8s/production /tmp/downloora-k8s
-          find /tmp/downloora-k8s -type f -name '*.yaml' -exec sed -i "s|image: downloora-app|image: ${{ needs.build.outputs.image_ref }}|g" {} +
 
       - name: Configure SSH
         env:
@@ -133,13 +137,6 @@ jobs:
             echo "::error::Missing VPS_HOST. Add it as a GitHub Actions secret or variable with your VPS public IP address."
             exit 1
           fi
-
-          VPS_HOST="$(printf '%s' "$VPS_HOST" | tr -d '\r' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n 1 || true)"
-          if [ -z "${VPS_HOST:-}" ]; then
-            echo "::error::VPS_HOST must contain your VPS public IP address, for example 94.75.223.239."
-            exit 1
-          fi
-          echo "VPS_HOST=$VPS_HOST" >> "$GITHUB_ENV"
 
           if [ -z "${VPS_SSH_KEY:-}" ]; then
             echo "::error::Missing VPS_SSH_KEY. Add it as a GitHub Actions secret containing the private SSH key for the VPS."
@@ -151,73 +148,42 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Upload manifests
+      - name: Upload Compose files
         run: |
-          ssh "$VPS_USER@$VPS_HOST" 'rm -rf ~/downloora-k8s && mkdir -p ~/downloora-k8s'
-          scp -r /tmp/downloora-k8s/* "$VPS_USER@$VPS_HOST:~/downloora-k8s/"
+          # shellcheck disable=SC2029
+          ssh "$VPS_USER@$VPS_HOST" "mkdir -p '$DEPLOY_PATH/docker/caddy' '$DEPLOY_PATH/docker/qbittorrent'"
+          scp docker-compose.yml docker-compose.prod.yml "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/"
+          scp docker/caddy/Caddyfile "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/docker/caddy/Caddyfile"
+          scp docker/qbittorrent/qBittorrent.conf "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/docker/qbittorrent/qBittorrent.conf"
 
-      - name: Deploy to VPS Kubernetes
+      - name: Deploy with Docker Compose
         env:
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+          APP_IMAGE: ${{ needs.build.outputs.image }}
+          APP_IMAGE_TAG: ${{ github.sha }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ghcr_username_b64="$(printf '%s' "${GHCR_USERNAME:-}" | base64 -w0)"
-          ghcr_token_b64="$(printf '%s' "${GHCR_TOKEN:-}" | base64 -w0)"
-          production_env_b64="$(printf '%s' "${PRODUCTION_ENV:-}" | base64 -w0)"
+          ghcr_username_b64="$(printf '%s' "$GHCR_USERNAME" | base64 -w0)"
+          ghcr_token_b64="$(printf '%s' "$GHCR_TOKEN" | base64 -w0)"
 
+          # shellcheck disable=SC2029
           ssh "$VPS_USER@$VPS_HOST" \
-            "GHCR_USERNAME_B64=${ghcr_username_b64} GHCR_TOKEN_B64=${ghcr_token_b64} PRODUCTION_ENV_B64=${production_env_b64} bash -s" <<'REMOTE'
+            "DEPLOY_PATH='$DEPLOY_PATH' APP_IMAGE='$APP_IMAGE' APP_IMAGE_TAG='$APP_IMAGE_TAG' GHCR_USERNAME_B64='$ghcr_username_b64' GHCR_TOKEN_B64='$ghcr_token_b64' bash -s" <<'REMOTE'
           set -euo pipefail
 
-          GHCR_USERNAME="$(printf '%s' "${GHCR_USERNAME_B64:-}" | base64 -d)"
-          GHCR_TOKEN="$(printf '%s' "${GHCR_TOKEN_B64:-}" | base64 -d)"
-          PRODUCTION_ENV="$(printf '%s' "${PRODUCTION_ENV_B64:-}" | base64 -d)"
+          GHCR_USERNAME="$(printf '%s' "$GHCR_USERNAME_B64" | base64 -d)"
+          GHCR_TOKEN="$(printf '%s' "$GHCR_TOKEN_B64" | base64 -d)"
 
-          kubectl apply -f ~/downloora-k8s/namespace.yaml
+          cd "$DEPLOY_PATH"
 
-          if ! kubectl -n downloora get secret downloora-secrets >/dev/null 2>&1; then
-            echo "Missing Kubernetes secret downloora/downloora-secrets. Create it from k8s/production/secret.example.yaml before deploying."
+          if [ ! -f .env ]; then
+            echo "Missing $DEPLOY_PATH/.env. Create it on the VPS before deploying."
             exit 1
           fi
 
-          kubectl -n downloora patch secret downloora-secrets \
-            --type=json \
-            -p='[{"op":"remove","path":"/data/REDIS_PASSWORD"}]' >/dev/null 2>&1 || true
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
-          if [ -n "${PRODUCTION_ENV:-}" ]; then
-            printf '%s\n' "$PRODUCTION_ENV" > /tmp/downloora-production.env
-            kubectl -n downloora create secret generic downloora-env \
-              --from-env-file=/tmp/downloora-production.env \
-              --dry-run=client -o yaml | kubectl apply -f -
-            rm -f /tmp/downloora-production.env
-          else
-            kubectl -n downloora create secret generic downloora-env \
-              --dry-run=client -o yaml | kubectl apply -f -
-          fi
-
-          if [ -n "${GHCR_USERNAME:-}" ] && [ -n "${GHCR_TOKEN:-}" ]; then
-            kubectl -n downloora create secret docker-registry ghcr-credentials \
-              --docker-server=ghcr.io \
-              --docker-username="$GHCR_USERNAME" \
-              --docker-password="$GHCR_TOKEN" \
-              --dry-run=client -o yaml | kubectl apply -f -
-
-            kubectl -n downloora patch serviceaccount default \
-              -p '{"imagePullSecrets":[{"name":"ghcr-credentials"}]}' >/dev/null
-          fi
-
-          kubectl -n downloora delete job downloora-migrate --ignore-not-found
-          kubectl apply -k ~/downloora-k8s
-          kubectl -n downloora delete statefulset minio --ignore-not-found
-          kubectl -n downloora delete service minio --ignore-not-found
-
-          kubectl -n downloora rollout status statefulset/postgres --timeout=300s
-          kubectl -n downloora rollout status statefulset/redis --timeout=180s
-          kubectl -n downloora rollout status statefulset/rustfs --timeout=300s
-          kubectl -n downloora rollout status deployment/qbittorrent --timeout=300s
-          kubectl -n downloora wait --for=condition=complete job/downloora-migrate --timeout=300s
-          kubectl -n downloora rollout status deployment/downloora-app --timeout=300s
-          kubectl -n downloora rollout status deployment/downloora-queue --timeout=300s
-          kubectl -n downloora rollout status deployment/downloora-scheduler --timeout=180s
+          APP_IMAGE="$APP_IMAGE" APP_IMAGE_TAG="$APP_IMAGE_TAG" docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+          APP_IMAGE="$APP_IMAGE" APP_IMAGE_TAG="$APP_IMAGE_TAG" docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build --remove-orphans
+          docker image prune -f
           REMOTE
