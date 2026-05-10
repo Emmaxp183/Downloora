@@ -6,7 +6,8 @@
 </script>
 
 <script lang="ts">
-    import { Form } from '@inertiajs/svelte';
+    import { Form, Link } from '@inertiajs/svelte';
+    import ArrowLeft from 'lucide-svelte/icons/arrow-left';
     import AppHead from '@/components/AppHead.svelte';
     import InputError from '@/components/InputError.svelte';
     import PasswordInput from '@/components/PasswordInput.svelte';
@@ -15,12 +16,20 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
-    import { login } from '@/routes';
+    import { home, login } from '@/routes';
     import { redirect as googleRedirect } from '@/routes/auth/google';
     import { store } from '@/routes/register';
 </script>
 
 <AppHead title="Register" />
+
+<Link
+    href={home()}
+    class="inline-flex w-fit items-center gap-2 rounded-full border-2 border-foreground bg-card px-4 py-2 text-sm font-bold text-foreground shadow-[2px_2px_0_0_var(--foreground)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-muted hover:shadow-[1px_1px_0_0_var(--foreground)]"
+>
+    <ArrowLeft class="size-4" aria-hidden="true" />
+    Back to home
+</Link>
 
 <div class="flex flex-col gap-4">
     <a
