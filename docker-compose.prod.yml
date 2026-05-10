@@ -1,0 +1,15 @@
+services:
+  app:
+    image: "${APP_IMAGE:?Set APP_IMAGE to the GHCR image name}:${APP_IMAGE_TAG:-latest}"
+    build: !reset null
+    pull_policy: always
+
+  queue:
+    image: "${APP_IMAGE:?Set APP_IMAGE to the GHCR image name}:${APP_IMAGE_TAG:-latest}"
+    build: !reset null
+    pull_policy: always
+
+  scheduler:
+    image: "${APP_IMAGE:?Set APP_IMAGE to the GHCR image name}:${APP_IMAGE_TAG:-latest}"
+    build: !reset null
+    pull_policy: always
