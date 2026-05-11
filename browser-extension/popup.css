@@ -108,9 +108,99 @@ body {
   padding: 0;
 }
 
+.icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
 .close-button:active {
   box-shadow: 0px 0px 0 var(--ink);
   transform: translate(2px, 2px);
+}
+
+.icon-button:active {
+  box-shadow: 0px 0px 0 var(--ink);
+  transform: translate(2px, 2px);
+}
+
+.settings-panel {
+  display: grid;
+  gap: 7px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: #fffdf8;
+  padding: 10px;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px;
+  gap: 8px;
+}
+
+.settings-input {
+  min-width: 0;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  padding: 0 10px;
+  outline: none;
+}
+
+.settings-input:focus {
+  box-shadow: 0 0 0 2px var(--lime);
+}
+
+.settings-save {
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.settings-save:active {
+  box-shadow: 0px 0px 0 var(--ink);
+  transform: translate(2px, 2px);
+}
+
+.settings-status {
+  min-height: 14px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .section-header {

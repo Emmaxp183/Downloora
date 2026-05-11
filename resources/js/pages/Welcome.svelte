@@ -19,6 +19,12 @@
     import AppLogoIcon from '@/components/AppLogoIcon.svelte';
     import { toUrl } from '@/lib/utils';
     import { dashboard, login, register } from '@/routes';
+    import {
+        cloudTorrentStorage,
+        privateTorrentCloud,
+        seedrAlternative,
+        torrentToCloud,
+    } from '@/routes/seo';
 
     let {
         canRegister = true,
@@ -27,6 +33,8 @@
     } = $props();
 
     const auth = $derived(page.props.auth);
+    const seoDescription =
+        'Downloora saves magnet links, torrent files, and media downloads to private cloud storage so you can stream, download, and manage files from any browser.';
     const primaryRoute = $derived(auth.user ? dashboard() : register());
     const primaryLabel = $derived(auth.user ? 'Open Dashboard' : 'Get Started');
 
@@ -116,9 +124,33 @@
             ],
         },
     ];
+
+    const seoLinks = [
+        {
+            title: 'Cloud Torrent Storage',
+            href: cloudTorrentStorage(),
+        },
+        {
+            title: 'Torrent to Cloud',
+            href: torrentToCloud(),
+        },
+        {
+            title: 'Seedr Alternative',
+            href: seedrAlternative(),
+        },
+        {
+            title: 'Private Torrent Cloud',
+            href: privateTorrentCloud(),
+        },
+    ];
 </script>
 
-<AppHead title="Downloora" />
+<AppHead
+    title="Private Torrent Cloud Storage"
+    description={seoDescription}
+    canonical="/"
+    image="/image1.jpg"
+/>
 
 <svelte:head>
     <style>
@@ -664,6 +696,19 @@
             <span class="text-[#F2EFE9]/60">
                 Torrent cloud storage powered by Laravel, Docker, and RustFS.
             </span>
+            <nav
+                class="flex flex-wrap justify-center gap-3 md:justify-end"
+                aria-label="Popular pages"
+            >
+                {#each seoLinks as seoLink (seoLink.title)}
+                    <Link
+                        href={toUrl(seoLink.href)}
+                        class="text-[#F2EFE9]/70 transition hover:text-[#C9E265]"
+                    >
+                        {seoLink.title}
+                    </Link>
+                {/each}
+            </nav>
         </div>
     </footer>
 </div>

@@ -3,6 +3,7 @@ FROM php:8.4-fpm-alpine AS php-base
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
+    aria2 \
     bash \
     curl \
     nginx \
@@ -11,6 +12,7 @@ RUN apk add --no-cache \
     oniguruma-dev \
     postgresql-dev \
     ffmpeg \
+    py3-pip \
     yt-dlp \
     unzip \
     zip \
@@ -24,6 +26,7 @@ RUN apk add --no-cache \
     zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
+    && python3 -m pip install --break-system-packages --no-cache-dir bgutil-ytdlp-pot-provider \
     && apk del $PHPIZE_DEPS
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

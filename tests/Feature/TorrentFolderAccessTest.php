@@ -50,6 +50,49 @@ test('owners can download a torrent folder as a zip file', function () {
     unlink($zipPath);
 });
 
+test('owners can download a locally imported torrent folder as a zip file', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $torrent = Torrent::factory()->for($user)->create(['name' => 'Cached Folder']);
+
+    $video = StoredFile::factory()->for($user)->for($torrent)->create([
+        's3_disk' => 'local',
+        's3_key' => 'qbittorrent/'.$torrent->hash.'/Cached Folder/video.mp4',
+        'original_path' => 'Cached Folder/video.mp4',
+        'name' => 'video.mp4',
+        'size_bytes' => 11,
+    ]);
+
+    StoredFile::factory()->for($user)->for($torrent)->create([
+        's3_disk' => 'local',
+        's3_key' => 'qbittorrent/'.$torrent->hash.'/Cached Folder/subtitle.srt',
+        'original_path' => 'Cached Folder/subtitle.srt',
+        'name' => 'subtitle.srt',
+        'size_bytes' => 8,
+    ]);
+
+    Storage::disk('local')->put($video->s3_key, 'video-bytes');
+    Storage::disk('local')->put('qbittorrent/'.$torrent->hash.'/Cached Folder/subtitle.srt', 'subtitles');
+
+    $response = $this->actingAs($user)
+        ->get(URL::signedRoute('folders.download', $torrent))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/zip');
+
+    $zipPath = tempnam(sys_get_temp_dir(), 'seedr-test-local-folder-zip');
+    file_put_contents($zipPath, $response->streamedContent());
+
+    $zip = new ZipArchive;
+
+    expect($zip->open($zipPath))->toBeTrue()
+        ->and($zip->getFromName('Cached Folder/video.mp4'))->toBe('video-bytes')
+        ->and($zip->getFromName('Cached Folder/subtitle.srt'))->toBe('subtitles');
+
+    $zip->close();
+    unlink($zipPath);
+});
+
 test('folder zip downloads require a valid signature and ownership', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();

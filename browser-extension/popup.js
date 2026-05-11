@@ -1,4 +1,5 @@
-const DEFAULT_DOWNLOORA_URL = 'https://localhost:8443/dashboard';
+const DEFAULT_DOWNLOORA_URL = 'https://downloora.com/dashboard';
+const LEGACY_DOWNLOORA_URL = 'https://localhost:8443/dashboard';
 
 const statusElement = document.querySelector('#status');
 const listElement = document.querySelector('#media-list');
@@ -6,8 +7,21 @@ const headerTitle = document.querySelector('#header-title');
 const headerSubtitle = document.querySelector('#header-subtitle');
 const headerThumbnail = document.querySelector('#header-thumbnail');
 const closeBtn = document.querySelector('#close-btn');
+const settingsToggle = document.querySelector('#settings-toggle');
+const settingsPanel = document.querySelector('#settings-panel');
+const downlooraUrlInput = document.querySelector('#downloora-url');
+const settingsStatus = document.querySelector('#settings-status');
 
 closeBtn.addEventListener('click', () => window.close());
+
+settingsToggle.addEventListener('click', () => {
+  settingsPanel.hidden = !settingsPanel.hidden;
+
+  if (!settingsPanel.hidden) {
+    downlooraUrlInput.focus();
+    downlooraUrlInput.select();
+  }
+});
 
 const supportedPageSource = (url) => {
   if (
@@ -93,11 +107,19 @@ const mediaLabel = (item) => {
 
 const normalizeDownlooraUrl = (value) => {
   try {
-    const url = new URL(value || DEFAULT_DOWNLOORA_URL);
+    const trimmedValue = (value || DEFAULT_DOWNLOORA_URL).trim();
+    const url = new URL(/^https?:\/\//i.test(trimmedValue) ? trimmedValue : `https://${trimmedValue}`);
 
     if (!/^https?:$/i.test(url.protocol)) {
       return DEFAULT_DOWNLOORA_URL;
     }
+
+    if (url.pathname === '/' || url.pathname === '') {
+      url.pathname = '/dashboard';
+    }
+
+    url.hash = '';
+    url.search = '';
 
     return url.toString();
   } catch {
@@ -105,11 +127,42 @@ const normalizeDownlooraUrl = (value) => {
   }
 };
 
-const openInDownloora = async (mediaUrl, mode = 'download') => {
-  const { downlooraUrl: storedDownlooraUrl } = await chrome.storage.sync.get({
+const configuredDownlooraUrl = async () => {
+  const { downlooraUrl } = await chrome.storage.sync.get({
     downlooraUrl: DEFAULT_DOWNLOORA_URL,
   });
-  const downlooraUrl = normalizeDownlooraUrl(storedDownlooraUrl);
+
+  if (downlooraUrl === LEGACY_DOWNLOORA_URL) {
+    await chrome.storage.sync.set({ downlooraUrl: DEFAULT_DOWNLOORA_URL });
+
+    return DEFAULT_DOWNLOORA_URL;
+  }
+
+  return normalizeDownlooraUrl(downlooraUrl);
+};
+
+const loadSettings = async () => {
+  downlooraUrlInput.value = await configuredDownlooraUrl();
+};
+
+settingsPanel.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const downlooraUrl = normalizeDownlooraUrl(downlooraUrlInput.value);
+  await chrome.storage.sync.set({ downlooraUrl });
+
+  downlooraUrlInput.value = downlooraUrl;
+  settingsStatus.textContent = 'Saved';
+
+  window.setTimeout(() => {
+    settingsStatus.textContent = '';
+  }, 1800);
+});
+
+const openInDownloora = async (mediaUrl, mode = 'download') => {
+  const downlooraUrl = await configuredDownlooraUrl();
+
+  await syncYoutubeCookies(downlooraUrl, mediaUrl);
 
   const target = new URL(downlooraUrl);
   target.searchParams.set('url', mediaUrl);
@@ -149,6 +202,69 @@ const getNetworkMedia = async (tabId) => {
   });
 
   return response?.items ?? [];
+};
+
+const youtubeCookies = async () => {
+  const response = await chrome.runtime.sendMessage({
+    type: 'DOWNLOORA_GET_YOUTUBE_COOKIES',
+  });
+
+  return response?.cookies ?? [];
+};
+
+const csrfToken = async (downlooraUrl) => {
+  const response = await fetch(downlooraUrl, {
+    headers: {
+      Accept: 'text/html',
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const html = await response.text();
+  const match = html.match(/<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i);
+
+  return match?.[1] ?? null;
+};
+
+const syncYoutubeCookies = async (downlooraUrl, mediaUrl) => {
+  try {
+    const parsed = new URL(mediaUrl);
+
+    if (!parsed.hostname.endsWith('youtube.com') && !parsed.hostname.endsWith('youtu.be')) {
+      return;
+    }
+
+    const cookies = await youtubeCookies();
+
+    if (cookies.length === 0) {
+      return;
+    }
+
+    const token = await csrfToken(downlooraUrl);
+
+    if (!token) {
+      return;
+    }
+
+    const target = new URL('/youtube-cookies', downlooraUrl);
+
+    await fetch(target.toString(), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': token,
+      },
+      body: JSON.stringify({ cookies }),
+    });
+  } catch {
+    // Download can continue; Downloora will show the yt-dlp cookie error if sync failed.
+  }
 };
 
 const uniqueMedia = (items) => {
@@ -312,6 +428,7 @@ const scan = async () => {
 };
 
 const boot = async () => {
+  await loadSettings();
   await scan();
 };
 

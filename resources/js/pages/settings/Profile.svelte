@@ -18,19 +18,9 @@
     import DeleteUser from '@/components/DeleteUser.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
-    import TextLink from '@/components/TextLink.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
-    import { send } from '@/routes/verification';
-
-    let {
-        mustVerifyEmail,
-        status = '',
-    }: {
-        mustVerifyEmail: boolean;
-        status?: string;
-    } = $props();
 
     const user = $derived(page.props.auth.user);
 </script>
@@ -80,26 +70,6 @@
                 />
                 <InputError class="mt-2" message={errors.email} />
             </div>
-
-            {#if mustVerifyEmail && !user.email_verified_at}
-                <div>
-                    <p class="-mt-4 text-sm font-medium text-muted-foreground">
-                        Your email address is unverified.
-                        <TextLink href={send()} as="button">
-                            Click here to resend the verification email.
-                        </TextLink>
-                    </p>
-
-                    {#if status === 'verification-link-sent'}
-                        <div
-                            class="mt-2 text-sm font-bold text-[var(--downloora-green)]"
-                        >
-                            A new verification link has been sent to your email
-                            address.
-                        </div>
-                    {/if}
-                </div>
-            {/if}
 
             <div class="flex items-center gap-4">
                 <Button

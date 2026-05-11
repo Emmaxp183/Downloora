@@ -44,7 +44,7 @@ class StartTorrentDownload implements ShouldQueue
                 'error_message' => null,
             ])->save();
 
-            PollTorrentProgress::dispatch($torrent)->delay(now()->addSeconds(10));
+            PollTorrentProgress::dispatch($torrent)->delay(now()->addSeconds(2));
         } catch (Throwable $throwable) {
             $torrent->forceFill([
                 'status' => TorrentStatus::DownloadFailed,

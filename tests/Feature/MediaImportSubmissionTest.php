@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\WishlistItem;
 use Illuminate\Support\Facades\Bus;
 
-test('verified users can submit a public media url through the shared input', function () {
+test('users can submit a public media url through the shared input', function () {
     Bus::fake();
 
     $user = User::factory()->create([

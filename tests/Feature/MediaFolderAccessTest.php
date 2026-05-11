@@ -44,6 +44,43 @@ test('owners can download a media folder as a zip file', function () {
     unlink($zipPath);
 });
 
+test('owners can download a locally imported media folder as a zip file', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $mediaImport = MediaImport::factory()->for($user)->create([
+        'title' => 'Cached Media',
+    ]);
+
+    $file = StoredFile::factory()->for($user)->create([
+        'torrent_id' => null,
+        'media_import_id' => $mediaImport->id,
+        's3_disk' => 'local',
+        's3_key' => 'media/'.$mediaImport->id.'/Cached-Media/video.mp4',
+        'original_path' => 'Media/Cached-Media/video.mp4',
+        'name' => 'video.mp4',
+        'size_bytes' => 11,
+    ]);
+
+    Storage::disk('local')->put($file->s3_key, 'video-bytes');
+
+    $response = $this->actingAs($user)
+        ->get(URL::signedRoute('media-folders.download', $mediaImport))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/zip');
+
+    $zipPath = tempnam(sys_get_temp_dir(), 'seedr-test-local-media-folder-zip');
+    file_put_contents($zipPath, $response->streamedContent());
+
+    $zip = new ZipArchive;
+
+    expect($zip->open($zipPath))->toBeTrue()
+        ->and($zip->getFromName('Cached-Media/video.mp4'))->toBe('video-bytes');
+
+    $zip->close();
+    unlink($zipPath);
+});
+
 test('media folder zip downloads require a valid signature and ownership', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();

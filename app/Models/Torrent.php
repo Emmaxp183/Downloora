@@ -68,6 +68,14 @@ class Torrent extends Model
     }
 
     /**
+     * Get the stored files produced by this torrent.
+     */
+    public function storedFiles(): HasMany
+    {
+        return $this->hasMany(StoredFile::class);
+    }
+
+    /**
      * Scope the query to torrents that are still active.
      */
     public function scopeActive(Builder $query): Builder
@@ -77,6 +85,10 @@ class Torrent extends Model
             TorrentStatus::Queued,
             TorrentStatus::Downloading,
             TorrentStatus::Importing,
+            TorrentStatus::MetadataFailed,
+            TorrentStatus::QuotaExceeded,
+            TorrentStatus::DownloadFailed,
+            TorrentStatus::ImportFailed,
         ]);
     }
 
@@ -90,6 +102,10 @@ class Torrent extends Model
             TorrentStatus::Queued,
             TorrentStatus::Downloading,
             TorrentStatus::Importing,
+            TorrentStatus::MetadataFailed,
+            TorrentStatus::QuotaExceeded,
+            TorrentStatus::DownloadFailed,
+            TorrentStatus::ImportFailed,
         ], true);
     }
 }

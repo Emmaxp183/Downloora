@@ -6,6 +6,8 @@ use App\Models\StoredFile;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\WishlistItem;
+use App\Services\Downloads\DownloadSpeedSampler;
+use App\Services\System\ServerMetrics;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
@@ -22,6 +24,27 @@ test('authenticated users can visit the dashboard', function () {
 });
 
 test('dashboard includes quota, active torrent, recent torrents, and recent files', function () {
+    app()->instance(ServerMetrics::class, new class extends ServerMetrics
+    {
+        public function snapshot(): array
+        {
+            return [
+                'cpu' => ['usage_percent' => 41, 'cores' => 8],
+                'memory' => ['used_bytes' => 4_294_967_296, 'total_bytes' => 8_589_934_592, 'usage_percent' => 50],
+                'network' => ['received_bytes_per_second' => 125_000_000, 'transmitted_bytes_per_second' => 12_500_000, 'total_bytes_per_second' => 137_500_000],
+                'sampled_at' => '2026-05-10T00:00:00.000000Z',
+            ];
+        }
+    });
+
+    app()->instance(DownloadSpeedSampler::class, new class extends DownloadSpeedSampler
+    {
+        public function sample(string $key, int $downloadedBytes): int
+        {
+            return 64_000_000;
+        }
+    });
+
     $user = User::factory()->create(['storage_quota_bytes' => 1000]);
     StorageUsageEvent::factory()->for($user)->create(['delta_bytes' => 250]);
 
@@ -54,6 +77,11 @@ test('dashboard includes quota, active torrent, recent torrents, and recent file
             ->where('quota.quota_bytes', 1000)
             ->where('quota.remaining_bytes', 750)
             ->where('activeTorrent.name', 'Active Torrent')
+            ->where('activeTorrent.download_speed_bytes_per_second', 64_000_000)
+            ->where('systemMetrics.cpu.usage_percent', 41)
+            ->where('systemMetrics.cpu.cores', 8)
+            ->where('systemMetrics.memory.usage_percent', 50)
+            ->where('systemMetrics.network.total_bytes_per_second', 137_500_000)
             ->has('wishlistItems', 1)
             ->where('wishlistItems.0.title', 'Saved Later')
             ->where('wishlistItems.0.source_type', 'magnet')

@@ -11,6 +11,7 @@
         progress: number;
         total_size_bytes: number | null;
         downloaded_bytes: number;
+        download_speed_bytes_per_second: number;
         error_message: string | null;
     };
 
@@ -19,6 +20,22 @@
     const name = $derived(torrent.name ?? 'Inspecting torrent');
     const progress = $derived(Math.min(100, Math.max(0, torrent.progress)));
     const status = $derived(torrent.status.replaceAll('_', ' '));
+
+    const formatRate = (bytesPerSecond: number): string => {
+        if (bytesPerSecond >= 1024 * 1024 * 1024) {
+            return `${(bytesPerSecond / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
+        }
+
+        if (bytesPerSecond >= 1024 * 1024) {
+            return `${(bytesPerSecond / 1024 / 1024).toFixed(2)} MB/s`;
+        }
+
+        if (bytesPerSecond >= 1024) {
+            return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+        }
+
+        return `${Math.round(bytesPerSecond)} B/s`;
+    };
 
     const cancelDownload = (): void => {
         if (confirm(`Cancel ${name}?`)) {
@@ -49,7 +66,7 @@
             <p
                 class="mt-1 text-xs font-medium capitalize text-muted-foreground"
             >
-                {status}
+                {status} · {formatRate(torrent.download_speed_bytes_per_second)}
             </p>
             <div class="downloora-progress mt-2">
                 <div

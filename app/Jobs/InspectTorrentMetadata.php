@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\TorrentStatus;
 use App\Models\Torrent;
 use App\Services\Storage\StorageQuota;
+use App\Services\Torrents\CachedTorrentImporter;
 use App\Services\Torrents\TorrentMetadataInspector;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -22,7 +23,7 @@ class InspectTorrentMetadata implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TorrentMetadataInspector $inspector, StorageQuota $quota): void
+    public function handle(TorrentMetadataInspector $inspector, StorageQuota $quota, CachedTorrentImporter $cachedTorrents): void
     {
         $torrent = $this->torrent->fresh(['user']);
 
@@ -63,6 +64,10 @@ class InspectTorrentMetadata implements ShouldQueue
                 'status' => TorrentStatus::Queued,
                 'error_message' => null,
             ])->save();
+
+            if ($cachedTorrents->importIfAvailable($torrent)) {
+                return;
+            }
 
             StartTorrentDownload::dispatch($torrent);
         } catch (Throwable $throwable) {

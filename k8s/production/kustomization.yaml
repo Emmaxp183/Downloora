@@ -10,6 +10,7 @@ resources:
   - rustfs.yaml
   - qbittorrent.yaml
   - migrate-job.yaml
+  - transferd.yaml
   - app.yaml
   - queue.yaml
   - scheduler.yaml

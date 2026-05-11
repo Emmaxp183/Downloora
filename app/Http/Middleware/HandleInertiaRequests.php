@@ -38,6 +38,14 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'seo' => [
+                'appName' => config('app.name'),
+                'baseUrl' => rtrim((string) config('app.url'), '/'),
+                'defaultTitle' => config('seo.title'),
+                'defaultDescription' => config('seo.description'),
+                'defaultImage' => config('seo.image'),
+                'robots' => config('seo.robots'),
+            ],
             'auth' => [
                 'user' => $request->user(),
             ],

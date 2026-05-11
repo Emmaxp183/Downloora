@@ -10,6 +10,7 @@ services:
       - .env
     environment:
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      ENSURE_S3_BUCKET: ${ENSURE_S3_BUCKET:-true}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
@@ -25,9 +26,38 @@ services:
       AWS_BUCKET: ${AWS_BUCKET:-downloora}
       AWS_ENDPOINT: http://rustfs:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      IMPORT_S3_CONCURRENCY: ${IMPORT_S3_CONCURRENCY:-16}
+      IMPORT_S3_PART_SIZE_MB: ${IMPORT_S3_PART_SIZE_MB:-32}
+      TRANSFERD_ENABLED: ${TRANSFERD_ENABLED:-true}
+      TRANSFERD_PUBLIC_URL: ${TRANSFERD_PUBLIC_URL:-/__transferd}
       QBITTORRENT_BASE_URL: http://qbittorrent:8080
       QBITTORRENT_USERNAME: ${QBITTORRENT_USERNAME:-admin}
       QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD:-adminadmin}
+      QBITTORRENT_KEEP_AFTER_IMPORT: ${QBITTORRENT_KEEP_AFTER_IMPORT:-true}
+      QBITTORRENT_CONNECTION_SPEED: ${QBITTORRENT_CONNECTION_SPEED:-10000}
+      QBITTORRENT_ASYNC_IO_THREADS: ${QBITTORRENT_ASYNC_IO_THREADS:-128}
+      QBITTORRENT_DISK_CACHE_MB: ${QBITTORRENT_DISK_CACHE_MB:-32768}
+      QBITTORRENT_MAX_CONNECTIONS: ${QBITTORRENT_MAX_CONNECTIONS:-64000}
+      QBITTORRENT_MAX_CONNECTIONS_PER_TORRENT: ${QBITTORRENT_MAX_CONNECTIONS_PER_TORRENT:-16000}
+      QBITTORRENT_MAX_ACTIVE_UPLOADS: ${QBITTORRENT_MAX_ACTIVE_UPLOADS:-150}
+      QBITTORRENT_MAX_UPLOADS: ${QBITTORRENT_MAX_UPLOADS:-8000}
+      QBITTORRENT_MAX_UPLOADS_PER_TORRENT: ${QBITTORRENT_MAX_UPLOADS_PER_TORRENT:-2000}
+      QBITTORRENT_MAX_CONCURRENT_HTTP_ANNOUNCES: ${QBITTORRENT_MAX_CONCURRENT_HTTP_ANNOUNCES:-1000}
+      YTDLP_POT_PROVIDER_URL: ${YTDLP_POT_PROVIDER_URL:-http://yt-dlp-pot-provider:4416}
+      YTDLP_POT_DISABLE_INNERTUBE: ${YTDLP_POT_DISABLE_INNERTUBE:-true}
+      YTDLP_YOUTUBE_PLAYER_CLIENTS: ${YTDLP_YOUTUBE_PLAYER_CLIENTS:-mweb,web_safari,android_vr}
+      YTDLP_ADAPTIVE_SEGMENTS: ${YTDLP_ADAPTIVE_SEGMENTS:-true}
+      YTDLP_CONCURRENT_FRAGMENTS: ${YTDLP_CONCURRENT_FRAGMENTS:-64}
+      YTDLP_MAX_CONCURRENT_FRAGMENTS: ${YTDLP_MAX_CONCURRENT_FRAGMENTS:-192}
+      YTDLP_HTTP_CHUNK_SIZE: ${YTDLP_HTTP_CHUNK_SIZE:-32M}
+      YTDLP_EXTERNAL_DOWNLOADER: ${YTDLP_EXTERNAL_DOWNLOADER:-aria2c}
+      YTDLP_SEGMENT_CONNECTIONS: ${YTDLP_SEGMENT_CONNECTIONS:-64}
+      YTDLP_MAX_SEGMENT_CONNECTIONS: ${YTDLP_MAX_SEGMENT_CONNECTIONS:-192}
+      YTDLP_SEGMENT_SPLIT: ${YTDLP_SEGMENT_SPLIT:-64}
+      YTDLP_MAX_SEGMENT_SPLIT: ${YTDLP_MAX_SEGMENT_SPLIT:-192}
+      YTDLP_SEGMENT_MIN_SPLIT_SIZE: ${YTDLP_SEGMENT_MIN_SPLIT_SIZE:-1M}
+      YTDLP_SEGMENT_PIECE_LENGTH: ${YTDLP_SEGMENT_PIECE_LENGTH:-1M}
+      YTDLP_SEGMENT_DISK_CACHE: ${YTDLP_SEGMENT_DISK_CACHE:-256M}
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,6 +66,10 @@ services:
       rustfs:
         condition: service_started
       qbittorrent:
+        condition: service_started
+      yt-dlp-pot-provider:
+        condition: service_started
+      transferd:
         condition: service_started
     volumes:
       - laravel-storage:/var/www/html/storage
@@ -66,10 +100,37 @@ services:
       AWS_BUCKET: ${AWS_BUCKET:-downloora}
       AWS_ENDPOINT: http://rustfs:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      IMPORT_S3_CONCURRENCY: ${IMPORT_S3_CONCURRENCY:-16}
+      IMPORT_S3_PART_SIZE_MB: ${IMPORT_S3_PART_SIZE_MB:-32}
       QBITTORRENT_BASE_URL: http://qbittorrent:8080
       QBITTORRENT_USERNAME: ${QBITTORRENT_USERNAME:-admin}
       QBITTORRENT_PASSWORD: ${QBITTORRENT_PASSWORD:-adminadmin}
+      QBITTORRENT_KEEP_AFTER_IMPORT: ${QBITTORRENT_KEEP_AFTER_IMPORT:-true}
+      QBITTORRENT_CONNECTION_SPEED: ${QBITTORRENT_CONNECTION_SPEED:-10000}
+      QBITTORRENT_ASYNC_IO_THREADS: ${QBITTORRENT_ASYNC_IO_THREADS:-128}
+      QBITTORRENT_DISK_CACHE_MB: ${QBITTORRENT_DISK_CACHE_MB:-32768}
+      QBITTORRENT_MAX_CONNECTIONS: ${QBITTORRENT_MAX_CONNECTIONS:-64000}
+      QBITTORRENT_MAX_CONNECTIONS_PER_TORRENT: ${QBITTORRENT_MAX_CONNECTIONS_PER_TORRENT:-16000}
+      QBITTORRENT_MAX_ACTIVE_UPLOADS: ${QBITTORRENT_MAX_ACTIVE_UPLOADS:-150}
+      QBITTORRENT_MAX_UPLOADS: ${QBITTORRENT_MAX_UPLOADS:-8000}
+      QBITTORRENT_MAX_UPLOADS_PER_TORRENT: ${QBITTORRENT_MAX_UPLOADS_PER_TORRENT:-2000}
+      QBITTORRENT_MAX_CONCURRENT_HTTP_ANNOUNCES: ${QBITTORRENT_MAX_CONCURRENT_HTTP_ANNOUNCES:-1000}
       QUEUE_WORKER_PROCESSES: ${QUEUE_WORKER_PROCESSES:-3}
+      YTDLP_POT_PROVIDER_URL: ${YTDLP_POT_PROVIDER_URL:-http://yt-dlp-pot-provider:4416}
+      YTDLP_POT_DISABLE_INNERTUBE: ${YTDLP_POT_DISABLE_INNERTUBE:-true}
+      YTDLP_YOUTUBE_PLAYER_CLIENTS: ${YTDLP_YOUTUBE_PLAYER_CLIENTS:-mweb,web_safari,android_vr}
+      YTDLP_ADAPTIVE_SEGMENTS: ${YTDLP_ADAPTIVE_SEGMENTS:-true}
+      YTDLP_CONCURRENT_FRAGMENTS: ${YTDLP_CONCURRENT_FRAGMENTS:-64}
+      YTDLP_MAX_CONCURRENT_FRAGMENTS: ${YTDLP_MAX_CONCURRENT_FRAGMENTS:-192}
+      YTDLP_HTTP_CHUNK_SIZE: ${YTDLP_HTTP_CHUNK_SIZE:-32M}
+      YTDLP_EXTERNAL_DOWNLOADER: ${YTDLP_EXTERNAL_DOWNLOADER:-aria2c}
+      YTDLP_SEGMENT_CONNECTIONS: ${YTDLP_SEGMENT_CONNECTIONS:-64}
+      YTDLP_MAX_SEGMENT_CONNECTIONS: ${YTDLP_MAX_SEGMENT_CONNECTIONS:-192}
+      YTDLP_SEGMENT_SPLIT: ${YTDLP_SEGMENT_SPLIT:-64}
+      YTDLP_MAX_SEGMENT_SPLIT: ${YTDLP_MAX_SEGMENT_SPLIT:-192}
+      YTDLP_SEGMENT_MIN_SPLIT_SIZE: ${YTDLP_SEGMENT_MIN_SPLIT_SIZE:-1M}
+      YTDLP_SEGMENT_PIECE_LENGTH: ${YTDLP_SEGMENT_PIECE_LENGTH:-1M}
+      YTDLP_SEGMENT_DISK_CACHE: ${YTDLP_SEGMENT_DISK_CACHE:-256M}
     command:
       [
         "sh",
@@ -81,6 +142,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+      yt-dlp-pot-provider:
+        condition: service_started
     volumes:
       - laravel-storage:/var/www/html/storage
       - qbittorrent-downloads:/var/www/html/storage/app/private/qbittorrent
@@ -136,6 +199,8 @@ services:
     depends_on:
       app:
         condition: service_started
+      transferd:
+        condition: service_started
     networks:
       - downloora
 
@@ -175,6 +240,10 @@ services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
@@ -188,6 +257,35 @@ services:
       - qbittorrent-config:/config
       - qbittorrent-downloads:/downloads
       - ./docker/qbittorrent/qBittorrent.conf:/config/qBittorrent/qBittorrent.conf
+    networks:
+      - downloora
+
+  yt-dlp-pot-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    restart: unless-stopped
+    networks:
+      - downloora
+
+  transferd:
+    build:
+      context: .
+      dockerfile: services/transferd/Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_KEY: ${APP_KEY}
+      TRANSFERD_ADDR: :8080
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-rustfsadmin}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_ENDPOINT: http://rustfs:9000
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      LOCAL_STORAGE_ROOT: /var/www/html/storage/app/private
+    depends_on:
+      rustfs:
+        condition: service_started
+    volumes:
+      - laravel-storage:/var/www/html/storage
+      - qbittorrent-downloads:/var/www/html/storage/app/private/qbittorrent
     networks:
       - downloora
 

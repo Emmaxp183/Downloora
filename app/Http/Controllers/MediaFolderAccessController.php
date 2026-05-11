@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -105,6 +106,8 @@ class MediaFolderAccessController extends Controller
      */
     private function buildZip(MediaImport $mediaImport, Collection $files): string
     {
+        set_time_limit(0);
+
         $zipPath = tempnam(sys_get_temp_dir(), 'seedr-media-folder-');
         $sourceDirectory = sys_get_temp_dir().'/seedr-media-folder-sources-'.Str::uuid();
 
@@ -121,29 +124,13 @@ class MediaFolderAccessController extends Controller
         try {
             foreach ($files as $file) {
                 $zipEntryName = $this->zipEntryName($mediaImport, $file);
-                $localPath = $sourceDirectory.'/'.hash('sha256', $zipEntryName);
-                $sourceStream = $file->s3Disk()->readStream($file->s3_key);
+                $localPath = $this->zipSourcePath($file, $sourceDirectory, $zipEntryName);
 
-                if (! is_resource($sourceStream)) {
-                    throw new RuntimeException("Unable to read stored file [{$file->id}].");
+                if (! $zip->addFile($localPath, $zipEntryName)) {
+                    throw new RuntimeException("Unable to add stored file [{$file->id}] to media folder zip.");
                 }
 
-                $targetStream = fopen($localPath, 'wb');
-
-                if (! is_resource($targetStream)) {
-                    fclose($sourceStream);
-
-                    throw new RuntimeException("Unable to stage stored file [{$file->id}].");
-                }
-
-                try {
-                    stream_copy_to_stream($sourceStream, $targetStream);
-                } finally {
-                    fclose($sourceStream);
-                    fclose($targetStream);
-                }
-
-                $zip->addFile($localPath, $zipEntryName);
+                $zip->setCompressionName($zipEntryName, ZipArchive::CM_STORE);
             }
 
             $zip->close();
@@ -157,6 +144,37 @@ class MediaFolderAccessController extends Controller
         }
 
         return $zipPath;
+    }
+
+    private function zipSourcePath(StoredFile $file, string $sourceDirectory, string $zipEntryName): string
+    {
+        if ($file->s3_disk === 'local') {
+            return Storage::disk('local')->path($file->s3_key);
+        }
+
+        $localPath = $sourceDirectory.'/'.hash('sha256', $zipEntryName);
+        $sourceStream = $file->s3Disk()->readStream($file->s3_key);
+
+        if (! is_resource($sourceStream)) {
+            throw new RuntimeException("Unable to read stored file [{$file->id}].");
+        }
+
+        $targetStream = fopen($localPath, 'wb');
+
+        if (! is_resource($targetStream)) {
+            fclose($sourceStream);
+
+            throw new RuntimeException("Unable to stage stored file [{$file->id}].");
+        }
+
+        try {
+            stream_copy_to_stream($sourceStream, $targetStream);
+        } finally {
+            fclose($sourceStream);
+            fclose($targetStream);
+        }
+
+        return $localPath;
     }
 
     private function zipEntryName(MediaImport $mediaImport, StoredFile $file): string

@@ -1,6 +1,7 @@
 <script lang="ts">
     import BookOpenText from 'lucide-svelte/icons/book-open-text';
     import Download from 'lucide-svelte/icons/download';
+    import Eye from 'lucide-svelte/icons/eye';
     import FileArchive from 'lucide-svelte/icons/file-archive';
     import FileAudio from 'lucide-svelte/icons/file-audio';
     import FileCode2 from 'lucide-svelte/icons/file-code-2';
@@ -15,6 +16,7 @@
     import X from 'lucide-svelte/icons/x';
     import { destroy } from '@/actions/App/Http/Controllers/StoredFileAccessController';
     import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.svelte';
+    import FilePreviewDialog from '@/components/files/FilePreviewDialog.svelte';
 
     type StoredFile = {
         id: number;
@@ -40,9 +42,12 @@
         | 'unknown'
         | 'video';
 
+    type PreviewKind = 'audio' | 'image' | 'pdf' | 'text' | 'video';
+
     let { file }: { file: StoredFile } = $props();
 
     let deleteDialogOpen = $state(false);
+    let previewDialogOpen = $state(false);
 
     const getExtension = (name: string): string => {
         const match = /\.([a-z0-9]+)$/i.exec(name);
@@ -147,10 +152,54 @@
         return 'unknown';
     };
 
-    const canPlay = $derived(
-        file.mime_type?.startsWith('video/') ||
-            file.mime_type?.startsWith('audio/'),
-    );
+    const getPreviewKind = (
+        mimeType: string | null,
+        extension: string,
+    ): PreviewKind | null => {
+        if (mimeType?.startsWith('video/')) {
+            return 'video';
+        }
+
+        if (mimeType?.startsWith('audio/')) {
+            return 'audio';
+        }
+
+        if (mimeType?.startsWith('image/')) {
+            return 'image';
+        }
+
+        if (mimeType === 'application/pdf' || extension === 'pdf') {
+            return 'pdf';
+        }
+
+        if (
+            mimeType?.startsWith('text/') ||
+            [
+                'css',
+                'csv',
+                'html',
+                'js',
+                'json',
+                'log',
+                'md',
+                'nfo',
+                'php',
+                'srt',
+                'sql',
+                'svg',
+                'ts',
+                'txt',
+                'vtt',
+                'xml',
+                'yaml',
+                'yml',
+            ].includes(extension)
+        ) {
+            return 'text';
+        }
+
+        return null;
+    };
 
     const size = $derived(`${(file.size_bytes / 1024 / 1024).toFixed(2)} MB`);
     const changed = $derived(
@@ -167,6 +216,10 @@
     const iconKind = $derived(
         getFileIconKind(file.mime_type, getExtension(file.name)),
     );
+    const previewKind = $derived(
+        getPreviewKind(file.mime_type, getExtension(file.name)),
+    );
+    const canPreview = $derived(previewKind !== null);
     const iconColor = $derived(
         {
             archive: 'bg-[var(--downloora-orange)] text-[var(--downloora-ink)]',
@@ -219,14 +272,47 @@
         {/if}
     </span>
 
-    <div class="min-w-0">
-        <p class="truncate text-base font-medium">{file.name}</p>
-        <p class="truncate text-xs font-medium text-muted-foreground">
-            {file.original_path}
-        </p>
-    </div>
+    {#if canPreview}
+        <button
+            type="button"
+            onclick={() => (previewDialogOpen = true)}
+            class="min-w-0 text-left"
+            title="Preview"
+        >
+            <span class="block truncate text-base font-medium">
+                {file.name}
+            </span>
+            <span
+                class="block truncate text-xs font-medium text-muted-foreground"
+            >
+                {file.original_path}
+            </span>
+        </button>
+    {:else}
+        <div class="min-w-0">
+            <p class="truncate text-base font-medium">{file.name}</p>
+            <p class="truncate text-xs font-medium text-muted-foreground">
+                {file.original_path}
+            </p>
+        </div>
+    {/if}
 
     <div class="flex items-center justify-end gap-2 sm:justify-center">
+        {#if canPreview}
+            <button
+                type="button"
+                onclick={() => (previewDialogOpen = true)}
+                class="downloora-icon-button"
+                title="Preview"
+            >
+                {#if previewKind === 'video' || previewKind === 'audio'}
+                    <Play class="size-4" />
+                {:else}
+                    <Eye class="size-4" />
+                {/if}
+            </button>
+        {/if}
+
         <a
             href={file.download_url}
             class="downloora-icon-button"
@@ -234,17 +320,6 @@
         >
             <Download class="size-4" />
         </a>
-
-        {#if canPlay}
-            <a
-                href={file.stream_url}
-                target="_blank"
-                class="downloora-icon-button"
-                title="Stream"
-            >
-                <Play class="size-4" />
-            </a>
-        {/if}
 
         <button
             type="button"
@@ -262,6 +337,10 @@
         {changed}
     </div>
 </div>
+
+{#if previewKind}
+    <FilePreviewDialog bind:open={previewDialogOpen} {file} {previewKind} />
+{/if}
 
 <ConfirmDeleteDialog
     bind:open={deleteDialogOpen}

@@ -14,8 +14,10 @@
 <script lang="ts">
     import { Form } from '@inertiajs/svelte';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
+    import Upload from 'lucide-svelte/icons/upload';
     import { onDestroy } from 'svelte';
     import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+    import YoutubeCookieController from '@/actions/App/Http/Controllers/YoutubeCookieController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
@@ -39,6 +41,24 @@
 
     const twoFactorAuth = twoFactorAuthState();
     let showSetupModal = $state(false);
+    let youtubeCookieInput: HTMLInputElement;
+
+    const chooseYoutubeCookiesFile = (): void => {
+        youtubeCookieInput?.click();
+    };
+
+    const submitYoutubeCookiesFile = (
+        event: Event,
+        submit: () => void,
+    ): void => {
+        const input = event.currentTarget as HTMLInputElement;
+
+        if (!input.files?.length) {
+            return;
+        }
+
+        submit();
+    };
 
     onDestroy(() => twoFactorAuth.clearTwoFactorAuthData());
 </script>
@@ -107,6 +127,63 @@
                     Save password
                 </Button>
             </div>
+        {/snippet}
+    </Form>
+</div>
+
+<div class="downloora-card space-y-6 bg-card p-5">
+    <Heading
+        variant="small"
+        title="YouTube access"
+        description="Upload server-side cookies for YouTube media inspection"
+    />
+
+    <Form
+        {...YoutubeCookieController.form()}
+        class="space-y-4"
+        options={{ preserveScroll: true }}
+        resetOnSuccess
+    >
+        {#snippet children({
+            errors,
+            processing,
+            progress,
+            submit,
+            wasSuccessful,
+        })}
+            <input
+                bind:this={youtubeCookieInput}
+                id="cookies_file"
+                name="cookies_file"
+                type="file"
+                accept=".txt,text/plain"
+                disabled={processing}
+                class="hidden"
+                onchange={(event) => submitYoutubeCookiesFile(event, submit)}
+            />
+
+            <div class="flex flex-wrap items-center gap-3">
+                <Button
+                    type="button"
+                    disabled={processing}
+                    onclick={chooseYoutubeCookiesFile}
+                >
+                    <Upload class="size-4" />
+                    Upload cookies.txt
+                </Button>
+
+                {#if progress}
+                    <p class="text-sm font-medium text-muted-foreground">
+                        Uploading {progress.percentage}%.
+                    </p>
+                {:else if wasSuccessful}
+                    <p class="text-sm font-medium text-muted-foreground">
+                        YouTube cookies saved.
+                    </p>
+                {/if}
+            </div>
+
+            <InputError message={errors.cookies_file ?? errors.cookies} />
         {/snippet}
     </Form>
 </div>

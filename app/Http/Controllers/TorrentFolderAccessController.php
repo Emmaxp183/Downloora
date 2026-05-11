@@ -110,6 +110,8 @@ class TorrentFolderAccessController extends Controller
      */
     private function buildZip(Torrent $torrent, Collection $files): string
     {
+        set_time_limit(0);
+
         $zipPath = tempnam(sys_get_temp_dir(), 'seedr-folder-');
         $sourceDirectory = sys_get_temp_dir().'/seedr-folder-sources-'.Str::uuid();
 
@@ -126,29 +128,13 @@ class TorrentFolderAccessController extends Controller
         try {
             foreach ($files as $file) {
                 $zipEntryName = $this->zipEntryName($torrent, $file);
-                $localPath = $sourceDirectory.'/'.hash('sha256', $zipEntryName);
-                $sourceStream = $file->s3Disk()->readStream($file->s3_key);
+                $localPath = $this->zipSourcePath($file, $sourceDirectory, $zipEntryName);
 
-                if (! is_resource($sourceStream)) {
-                    throw new RuntimeException("Unable to read stored file [{$file->id}].");
+                if (! $zip->addFile($localPath, $zipEntryName)) {
+                    throw new RuntimeException("Unable to add stored file [{$file->id}] to folder zip.");
                 }
 
-                $targetStream = fopen($localPath, 'wb');
-
-                if (! is_resource($targetStream)) {
-                    fclose($sourceStream);
-
-                    throw new RuntimeException("Unable to stage stored file [{$file->id}].");
-                }
-
-                try {
-                    stream_copy_to_stream($sourceStream, $targetStream);
-                } finally {
-                    fclose($sourceStream);
-                    fclose($targetStream);
-                }
-
-                $zip->addFile($localPath, $zipEntryName);
+                $zip->setCompressionName($zipEntryName, ZipArchive::CM_STORE);
             }
 
             $zip->close();
@@ -162,6 +148,37 @@ class TorrentFolderAccessController extends Controller
         }
 
         return $zipPath;
+    }
+
+    private function zipSourcePath(StoredFile $file, string $sourceDirectory, string $zipEntryName): string
+    {
+        if ($file->s3_disk === 'local') {
+            return Storage::disk('local')->path($file->s3_key);
+        }
+
+        $localPath = $sourceDirectory.'/'.hash('sha256', $zipEntryName);
+        $sourceStream = $file->s3Disk()->readStream($file->s3_key);
+
+        if (! is_resource($sourceStream)) {
+            throw new RuntimeException("Unable to read stored file [{$file->id}].");
+        }
+
+        $targetStream = fopen($localPath, 'wb');
+
+        if (! is_resource($targetStream)) {
+            fclose($sourceStream);
+
+            throw new RuntimeException("Unable to stage stored file [{$file->id}].");
+        }
+
+        try {
+            stream_copy_to_stream($sourceStream, $targetStream);
+        } finally {
+            fclose($sourceStream);
+            fclose($targetStream);
+        }
+
+        return $localPath;
     }
 
     private function zipEntryName(Torrent $torrent, StoredFile $file): string

@@ -35,6 +35,7 @@
         duration_seconds: number | null;
         estimated_size_bytes: number | null;
         downloaded_bytes: number;
+        download_speed_bytes_per_second: number;
         formats: MediaFormat[];
         selected_format: MediaFormat | null;
         error_message: string | null;
@@ -65,6 +66,22 @@
         }
 
         return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    };
+
+    const formatRate = (bytesPerSecond: number): string => {
+        if (bytesPerSecond >= 1024 * 1024 * 1024) {
+            return `${(bytesPerSecond / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
+        }
+
+        if (bytesPerSecond >= 1024 * 1024) {
+            return `${(bytesPerSecond / 1024 / 1024).toFixed(2)} MB/s`;
+        }
+
+        if (bytesPerSecond >= 1024) {
+            return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+        }
+
+        return `${Math.round(bytesPerSecond)} B/s`;
     };
 
     const formatDuration = (seconds: number | null): string => {
@@ -174,7 +191,9 @@
                         >
                             {mediaImport.source_domain ??
                                 mediaImport.source_url}
-                            · {status}
+                            · {status} · {formatRate(
+                                mediaImport.download_speed_bytes_per_second,
+                            )}
                         </p>
                     </div>
 

@@ -9,10 +9,10 @@ data:
 
     [BitTorrent]
     Session\AddExtensionToIncompleteFiles=true
-    Session\AsyncIOThreadsCount=16
+    Session\AsyncIOThreadsCount=128
     Session\DHTEnabled=true
     Session\DefaultSavePath=/downloads
-    Session\DiskCacheSize=1024
+    Session\DiskCacheSize=32768
     Session\DiskIOType=1
     Session\ExcludedFileNames=
     Session\GlobalMaxInactiveSeedingMinutes=-1
@@ -20,16 +20,16 @@ data:
     Session\GlobalMaxSeedingMinutes=-1
     Session\LSDEnabled=true
     Session\MaxActiveCheckingTorrents=5
-    Session\MaxActiveDownloads=20
-    Session\MaxActiveTorrents=30
-    Session\MaxActiveUploads=10
-    Session\MaxConnections=3000
-    Session\MaxConnectionsPerTorrent=800
-    Session\MaxUploads=200
-    Session\MaxUploadsPerTorrent=80
+    Session\MaxActiveDownloads=100
+    Session\MaxActiveTorrents=150
+    Session\MaxActiveUploads=150
+    Session\MaxConnections=64000
+    Session\MaxConnectionsPerTorrent=16000
+    Session\MaxUploads=8000
+    Session\MaxUploadsPerTorrent=2000
     Session\PeXEnabled=true
     Session\Port=6881
-    Session\QueueingSystemEnabled=true
+    Session\QueueingSystemEnabled=false
     Session\SSL\Port=6882
     Session\TempPath=/downloads/.incomplete
     Session\TempPathEnabled=true
@@ -66,6 +66,25 @@ spec:
     - name: webui
       port: 8080
       targetPort: webui
+    - name: torrent-tcp
+      port: 6881
+      targetPort: torrent-tcp
+      protocol: TCP
+    - name: torrent-udp
+      port: 6881
+      targetPort: torrent-udp
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent-peers
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/part-of: downloora
+  ports:
     - name: torrent-tcp
       port: 6881
       targetPort: torrent-tcp

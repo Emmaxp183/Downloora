@@ -4,6 +4,7 @@ namespace App\Services\Torrents;
 
 use App\Enums\TorrentSourceType;
 use App\Models\Torrent;
+use Illuminate\Http\Client\RequestException;
 use RuntimeException;
 
 class QBittorrentMetadataInspector implements TorrentMetadataInspector
@@ -13,11 +14,12 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
     public function inspect(Torrent $torrent): TorrentMetadata
     {
         $hash = $this->extractInfoHash($torrent);
+        $deleteAfterInspection = true;
 
         if ($torrent->source_type === TorrentSourceType::Magnet) {
-            $this->client->addMagnet($torrent);
+            $deleteAfterInspection = $this->addTorrentForInspection(fn (): null => $this->client->addMagnet($torrent, paused: true));
         } elseif ($torrent->source_type === TorrentSourceType::TorrentFile) {
-            $this->client->addTorrentFile($torrent, paused: true);
+            $deleteAfterInspection = $this->addTorrentForInspection(fn (): null => $this->client->addTorrentFile($torrent, paused: true));
         } else {
             throw new RuntimeException('Unsupported torrent source type.');
         }
@@ -37,9 +39,24 @@ class QBittorrentMetadataInspector implements TorrentMetadataInspector
                 files: $files,
             );
         } finally {
-            if ($hash !== null && $hash !== '') {
+            if ($deleteAfterInspection && $hash !== null && $hash !== '') {
                 $this->client->delete($hash);
             }
+        }
+    }
+
+    private function addTorrentForInspection(callable $callback): bool
+    {
+        try {
+            $callback();
+
+            return true;
+        } catch (RequestException $exception) {
+            if ($exception->response->status() === 409) {
+                return false;
+            }
+
+            throw $exception;
         }
     }
 

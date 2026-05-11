@@ -8,10 +8,13 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\MediaFolderAccessController;
 use App\Http\Controllers\MediaImportController;
+use App\Http\Controllers\SeoController;
+use App\Http\Controllers\SeoPageController;
 use App\Http\Controllers\StoredFileAccessController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentFolderAccessController;
 use App\Http\Controllers\WishlistItemController;
+use App\Http\Controllers\YoutubeCookieController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -19,12 +22,27 @@ Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('cloud-torrent-storage', [SeoPageController::class, 'show'])
+    ->defaults('page', 'cloud-torrent-storage')
+    ->name('seo.cloud-torrent-storage');
+Route::get('torrent-to-cloud', [SeoPageController::class, 'show'])
+    ->defaults('page', 'torrent-to-cloud')
+    ->name('seo.torrent-to-cloud');
+Route::get('seedr-alternative', [SeoPageController::class, 'show'])
+    ->defaults('page', 'seedr-alternative')
+    ->name('seo.seedr-alternative');
+Route::get('private-torrent-cloud', [SeoPageController::class, 'show'])
+    ->defaults('page', 'private-torrent-cloud')
+    ->name('seo.private-torrent-cloud');
+
 Route::middleware('guest')->group(function () {
     Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
     Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::post('billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::get('billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
@@ -41,6 +59,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('wishlist', [WishlistItemController::class, 'store'])
         ->middleware('throttle:12,1')
         ->name('wishlist.store');
+    Route::post('youtube-cookies', YoutubeCookieController::class)
+        ->middleware('throttle:12,1')
+        ->name('youtube-cookies.store');
     Route::delete('wishlist/{wishlistItem}', [WishlistItemController::class, 'destroy'])->name('wishlist.destroy');
     Route::get('library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('files/{storedFile}/download', [StoredFileAccessController::class, 'download'])
@@ -62,7 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'verified', 'admin'])
+    ->middleware(['auth', 'admin'])
     ->group(function () {
         Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
         Route::patch('users/{user}/quota', [AdminUserController::class, 'updateQuota'])->name('users.quota.update');

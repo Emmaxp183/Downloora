@@ -4,23 +4,43 @@ namespace App\Services\Torrents;
 
 use App\Models\Torrent;
 use GuzzleHttp\Cookie\CookieJar;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Throwable;
 
 class QBittorrentClient
 {
     public function addMagnet(Torrent $torrent, bool $paused = false): void
     {
-        $this->request()
-            ->asForm()
-            ->post($this->url('/api/v2/torrents/add'), [
-                'urls' => $torrent->magnet_uri,
-                'savepath' => '/downloads/'.($torrent->info_hash ?: $torrent->id),
-                'paused' => $paused ? 'true' : 'false',
-            ])
-            ->throw();
+        $request = $this->request();
+
+        $this->applyPerformancePreferences($request);
+
+        try {
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/add'), [
+                    'urls' => $torrent->magnet_uri,
+                    'savepath' => '/downloads/'.($torrent->info_hash ?: $torrent->id),
+                    'paused' => $paused ? 'true' : 'false',
+                    'dlLimit' => 0,
+                    'upLimit' => 0,
+                    'sequentialDownload' => 'false',
+                    'firstLastPiecePrio' => 'false',
+                ])
+                ->throw();
+        } catch (RequestException $exception) {
+            if ($paused || $exception->response->status() !== 409) {
+                throw $exception;
+            }
+        }
+
+        if (! $paused) {
+            $this->prioritizeTorrent($request, $torrent);
+        }
     }
 
     public function addTorrentFile(Torrent $torrent, bool $paused = false): void
@@ -29,17 +49,102 @@ class QBittorrentClient
             throw new RuntimeException('Torrent file is missing.');
         }
 
-        $this->request()
-            ->attach(
-                'torrents',
-                Storage::get($torrent->torrent_file_path),
-                basename($torrent->torrent_file_path),
-            )
-            ->post($this->url('/api/v2/torrents/add'), [
-                'savepath' => '/downloads/'.($torrent->info_hash ?: $torrent->id),
-                'paused' => $paused ? 'true' : 'false',
+        $request = $this->request();
+
+        $this->applyPerformancePreferences($request);
+
+        try {
+            $request
+                ->attach(
+                    'torrents',
+                    Storage::get($torrent->torrent_file_path),
+                    basename($torrent->torrent_file_path),
+                )
+                ->post($this->url('/api/v2/torrents/add'), [
+                    'savepath' => '/downloads/'.($torrent->info_hash ?: $torrent->id),
+                    'paused' => $paused ? 'true' : 'false',
+                    'dlLimit' => 0,
+                    'upLimit' => 0,
+                    'sequentialDownload' => 'false',
+                    'firstLastPiecePrio' => 'false',
+                ])
+                ->throw();
+        } catch (RequestException $exception) {
+            if ($paused || $exception->response->status() !== 409) {
+                throw $exception;
+            }
+        }
+
+        if (! $paused) {
+            $this->prioritizeTorrent($request, $torrent);
+        }
+    }
+
+    private function applyPerformancePreferences(PendingRequest $request): void
+    {
+        $preferences = config('torrents.qbittorrent.performance_preferences', []);
+
+        if (! is_array($preferences) || $preferences === []) {
+            return;
+        }
+
+        $request
+            ->asForm()
+            ->post($this->url('/api/v2/app/setPreferences'), [
+                'json' => json_encode($preferences, JSON_THROW_ON_ERROR),
             ])
             ->throw();
+    }
+
+    private function prioritizeTorrent(PendingRequest $request, Torrent $torrent): void
+    {
+        $hash = $torrent->qbittorrent_hash ?: $torrent->info_hash;
+
+        if (blank($hash)) {
+            return;
+        }
+
+        try {
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/setDownloadLimit'), [
+                    'hashes' => $hash,
+                    'limit' => 0,
+                ])
+                ->throw();
+
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/setUploadLimit'), [
+                    'hashes' => $hash,
+                    'limit' => 0,
+                ])
+                ->throw();
+
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/setForceStart'), [
+                    'hashes' => $hash,
+                    'value' => 'true',
+                ])
+                ->throw();
+
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/topPrio'), [
+                    'hashes' => $hash,
+                ])
+                ->throw();
+
+            $request
+                ->asForm()
+                ->post($this->url('/api/v2/torrents/reannounce'), [
+                    'hashes' => $hash,
+                ])
+                ->throw();
+        } catch (Throwable $throwable) {
+            report($throwable);
+        }
     }
 
     /**

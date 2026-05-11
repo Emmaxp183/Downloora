@@ -7,8 +7,13 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Models\WishlistItem;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
+
+beforeEach(function () {
+    $this->withoutMiddleware(ThrottleRequests::class);
+});
 
 test('it identifies active torrents for a user', function () {
     $user = User::factory()->create();
@@ -19,7 +24,7 @@ test('it identifies active torrents for a user', function () {
     expect($user->torrents()->active()->count())->toBe(1);
 });
 
-test('verified users can submit a magnet torrent', function () {
+test('users can submit a magnet torrent', function () {
     Bus::fake();
 
     $user = User::factory()->create();
@@ -39,19 +44,23 @@ test('verified users can submit a magnet torrent', function () {
     Bus::assertDispatched(InspectTorrentMetadata::class);
 });
 
-test('unverified users cannot submit a magnet torrent', function () {
+test('unverified users can submit a magnet torrent', function () {
+    Bus::fake();
+
     $user = User::factory()->unverified()->create();
 
     $this->actingAs($user)
         ->post('/torrents', [
             'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
         ])
-        ->assertRedirect(route('verification.notice', absolute: false));
+        ->assertRedirect(route('dashboard', absolute: false))
+        ->assertSessionHasNoErrors();
 
-    expect(Torrent::query()->count())->toBe(0);
+    expect(Torrent::query()->count())->toBe(1);
+    Bus::assertDispatched(InspectTorrentMetadata::class);
 });
 
-test('verified users can upload a torrent file', function () {
+test('users can upload a torrent file', function () {
     Bus::fake();
     Storage::fake('s3');
 

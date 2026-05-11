@@ -6,8 +6,10 @@ use App\Jobs\InspectMediaImport;
 use App\Models\MediaImport;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
+use App\Services\Downloads\DownloadResourceProfile;
 use App\Services\Media\YtDlpClient;
 use App\Services\Storage\ObjectStorageUploader;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 test('it inspects media urls and stores available formats', function () {
@@ -160,7 +162,10 @@ test('it falls back to a short list when common video formats are unavailable', 
 });
 
 test('it uses configured concurrent fragments for media downloads', function () {
-    config(['media.yt_dlp.concurrent_fragments' => 12]);
+    config([
+        'media.yt_dlp.adaptive_segments' => false,
+        'media.yt_dlp.concurrent_fragments' => 12,
+    ]);
 
     $client = new YtDlpClient;
     $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
@@ -168,6 +173,219 @@ test('it uses configured concurrent fragments for media downloads', function () 
 
     expect($command)->toContain('--concurrent-fragments')
         ->and($command)->toContain('12');
+});
+
+test('it passes configured performance options for media downloads', function () {
+    config([
+        'media.yt_dlp.adaptive_segments' => false,
+        'media.yt_dlp.external_downloader' => 'aria2c',
+        'media.yt_dlp.external_downloader_args' => null,
+        'media.yt_dlp.http_chunk_size' => '16M',
+        'media.yt_dlp.segment_connections' => 32,
+        'media.yt_dlp.segment_split' => 32,
+        'media.yt_dlp.segment_min_split_size' => '1M',
+        'media.yt_dlp.segment_piece_length' => '1M',
+        'media.yt_dlp.segment_disk_cache' => '64M',
+    ]);
+
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+    $command = $method->invoke($client, 'https://example.com/video', 'best', '/tmp/downloora-media-test');
+
+    expect($command)->toContain('--http-chunk-size')
+        ->and($command)->toContain('16M')
+        ->and($command)->toContain('--downloader')
+        ->and($command)->toContain('aria2c')
+        ->and($command)->toContain('--downloader-args')
+        ->and($command)->toContain('aria2c:--continue=true --allow-overwrite=true --auto-file-renaming=false --file-allocation=none --optimize-concurrent-downloads=true --summary-interval=1 --max-connection-per-server=16 --split=32 --min-split-size=1M --piece-length=1M --disk-cache=64M');
+});
+
+test('it adapts media downloader segmentation to available CPU and RAM', function () {
+    config([
+        'media.yt_dlp.adaptive_segments' => true,
+        'media.yt_dlp.concurrent_fragments' => 64,
+        'media.yt_dlp.max_concurrent_fragments' => 192,
+        'media.yt_dlp.external_downloader' => 'aria2c',
+        'media.yt_dlp.external_downloader_args' => null,
+        'media.yt_dlp.segment_connections' => 64,
+        'media.yt_dlp.max_segment_connections' => 192,
+        'media.yt_dlp.segment_split' => 64,
+        'media.yt_dlp.max_segment_split' => 192,
+        'media.yt_dlp.segment_min_split_size' => '1M',
+        'media.yt_dlp.segment_piece_length' => '1M',
+        'media.yt_dlp.segment_disk_cache' => '256M',
+    ]);
+
+    app()->instance(DownloadResourceProfile::class, new class extends DownloadResourceProfile
+    {
+        protected function read(string $path): ?string
+        {
+            return match ($path) {
+                '/proc/stat' => "cpu  1 0 1 1 0 0 0 0 0 0\n".collect(range(0, 31))->map(fn (int $core): string => "cpu{$core} 1 0 1 1 0 0 0 0 0 0")->implode("\n"),
+                '/proc/meminfo' => "MemTotal:       67108864 kB\nMemAvailable:  60000000 kB\n",
+                default => null,
+            };
+        }
+    });
+
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+    $command = $method->invoke($client, 'https://example.com/video', 'best', '/tmp/downloora-media-test');
+
+    expect($command)->toContain('--concurrent-fragments')
+        ->and($command)->toContain('192')
+        ->and($command)->toContain('aria2c:--continue=true --allow-overwrite=true --auto-file-renaming=false --file-allocation=none --optimize-concurrent-downloads=true --summary-interval=1 --max-connection-per-server=16 --split=192 --min-split-size=1M --piece-length=1M --disk-cache=1024M');
+});
+
+test('it converts configured gigabyte cache sizes to aria2 compatible megabytes', function () {
+    config([
+        'media.yt_dlp.adaptive_segments' => false,
+        'media.yt_dlp.external_downloader' => 'aria2c',
+        'media.yt_dlp.external_downloader_args' => null,
+        'media.yt_dlp.segment_disk_cache' => '2G',
+    ]);
+
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+    $command = $method->invoke($client, 'https://example.com/video', 'best', '/tmp/downloora-media-test');
+
+    expect(collect($command)->contains(fn (string $argument): bool => str_contains($argument, '--disk-cache=2048M')))->toBeTrue();
+});
+
+test('it estimates downloaded bytes from yt-dlp progress output', function () {
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'parseProgress');
+    $samples = [];
+
+    $method->invoke(
+        $client,
+        '[download]  50.0% of 100.00MiB at 5.00MiB/s ETA 00:10',
+        function (int $progress, int $downloadedBytes) use (&$samples): void {
+            $samples[] = [$progress, $downloadedBytes];
+        },
+    );
+
+    expect($samples)->toBe([[50, 52_428_800]]);
+});
+
+test('it passes configured cookie file to yt-dlp commands', function () {
+    config(['media.yt_dlp.cookies' => '/var/www/html/storage/app/private/youtube-cookies.txt']);
+
+    $client = new YtDlpClient;
+    $inspectMethod = new ReflectionMethod(YtDlpClient::class, 'inspectCommand');
+    $downloadMethod = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+
+    $inspectCommand = $inspectMethod->invoke($client, 'https://www.youtube.com/watch?v=example');
+    $downloadCommand = $downloadMethod->invoke($client, 'https://www.youtube.com/watch?v=example', 'best', '/tmp/downloora-media-test');
+
+    expect($inspectCommand)->toContain('--cookies')
+        ->and($inspectCommand)->toContain('/var/www/html/storage/app/private/youtube-cookies.txt')
+        ->and($downloadCommand)->toContain('--cookies')
+        ->and($downloadCommand)->toContain('/var/www/html/storage/app/private/youtube-cookies.txt');
+});
+
+test('it passes configured browser cookies to yt-dlp commands', function () {
+    config([
+        'media.yt_dlp.cookies' => null,
+        'media.yt_dlp.cookies_from_browser' => 'firefox',
+    ]);
+
+    $client = new YtDlpClient;
+    $inspectMethod = new ReflectionMethod(YtDlpClient::class, 'inspectCommand');
+    $downloadMethod = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+
+    $inspectCommand = $inspectMethod->invoke($client, 'https://www.youtube.com/watch?v=example');
+    $downloadCommand = $downloadMethod->invoke($client, 'https://www.youtube.com/watch?v=example', 'best', '/tmp/downloora-media-test');
+
+    expect($inspectCommand)->toContain('--cookies-from-browser')
+        ->and($inspectCommand)->toContain('firefox')
+        ->and($downloadCommand)->toContain('--cookies-from-browser')
+        ->and($downloadCommand)->toContain('firefox');
+});
+
+test('it passes configured po token provider to yt-dlp commands', function () {
+    config([
+        'media.yt_dlp.pot_provider_url' => 'http://yt-dlp-pot-provider:4416',
+        'media.yt_dlp.youtube_player_clients' => 'mweb,web_safari,android_vr',
+    ]);
+
+    $client = new YtDlpClient;
+    $inspectMethod = new ReflectionMethod(YtDlpClient::class, 'inspectCommand');
+    $downloadMethod = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+
+    $inspectCommand = $inspectMethod->invoke($client, 'https://www.youtube.com/watch?v=example');
+    $downloadCommand = $downloadMethod->invoke($client, 'https://www.youtube.com/watch?v=example', 'best', '/tmp/downloora-media-test');
+
+    expect($inspectCommand)->toContain('--extractor-args')
+        ->and($inspectCommand)->toContain('youtube:player_client=mweb,web_safari,android_vr')
+        ->and($inspectCommand)->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416;disable_innertube=1')
+        ->and($downloadCommand)->toContain('--extractor-args')
+        ->and($downloadCommand)->toContain('youtube:player_client=mweb,web_safari,android_vr')
+        ->and($downloadCommand)->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416;disable_innertube=1');
+});
+
+test('it can keep innertube po token mode when configured', function () {
+    config([
+        'media.yt_dlp.pot_provider_url' => 'http://yt-dlp-pot-provider:4416',
+        'media.yt_dlp.pot_disable_innertube' => false,
+    ]);
+
+    $client = new YtDlpClient;
+    $inspectMethod = new ReflectionMethod(YtDlpClient::class, 'inspectCommand');
+    $downloadMethod = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+
+    $inspectCommand = $inspectMethod->invoke($client, 'https://www.youtube.com/watch?v=example');
+    $downloadCommand = $downloadMethod->invoke($client, 'https://www.youtube.com/watch?v=example', 'best', '/tmp/downloora-media-test');
+
+    expect($inspectCommand)->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416')
+        ->and($inspectCommand)->not->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416;disable_innertube=1')
+        ->and($downloadCommand)->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416')
+        ->and($downloadCommand)->not->toContain('youtubepot-bgutilhttp:base_url=http://yt-dlp-pot-provider:4416;disable_innertube=1');
+});
+
+test('it reports guest youtube fallback failure clearly when youtube requires sign in', function () {
+    $path = storage_path('framework/testing/youtube-cookies.txt');
+
+    File::ensureDirectoryExists(dirname($path));
+    File::put($path, implode("\n", [
+        '# Netscape HTTP Cookie File',
+        ".youtube.com\tTRUE\t/\tTRUE\t1793927348\tVISITOR_INFO1_LIVE\tguest-cookie-value",
+        '',
+    ]));
+
+    config(['media.yt_dlp.cookies' => $path]);
+
+    $client = new YtDlpClient;
+    $failureMethod = new ReflectionMethod(YtDlpClient::class, 'failureMessage');
+
+    $message = $failureMethod->invoke($client, 'ERROR: Sign in to confirm you’re not a bot.', 'Unable to inspect media URL.');
+
+    expect($message)->toBe('YouTube blocked anonymous guest access from this server for this video. Guest cookies, no-cookie mode, visitor-data mode, and the PO-token provider were tried.');
+});
+
+test('it can build youtube visitor-data fallback commands from guest cookies', function () {
+    $path = storage_path('framework/testing/youtube-cookies.txt');
+
+    File::ensureDirectoryExists(dirname($path));
+    File::put($path, implode("\n", [
+        '# Netscape HTTP Cookie File',
+        ".youtube.com\tTRUE\t/\tTRUE\t1793927348\tVISITOR_INFO1_LIVE\tguest-visitor-value",
+        '',
+    ]));
+
+    config([
+        'media.yt_dlp.cookies' => $path,
+        'media.yt_dlp.youtube_player_clients' => 'mweb,web_safari,android_vr',
+    ]);
+
+    $client = new YtDlpClient;
+    $inspectMethod = new ReflectionMethod(YtDlpClient::class, 'inspectCommand');
+
+    $inspectCommand = $inspectMethod->invoke($client, 'https://www.youtube.com/watch?v=example', 'visitor');
+
+    expect($inspectCommand)->not->toContain('--cookies')
+        ->and($inspectCommand)->toContain('youtubetab:skip=webpage')
+        ->and($inspectCommand)->toContain('youtube:player_client=mweb,web_safari,android_vr;player_skip=webpage,configs;visitor_data=guest-visitor-value');
 });
 
 test('it downloads selected media into object storage', function () {
@@ -222,7 +440,7 @@ test('it downloads selected media into object storage', function () {
     expect($mediaImport->status)->toBe(MediaImportStatus::Completed)
         ->and($mediaImport->progress)->toBe(100)
         ->and(StoredFile::query()->count())->toBe(1)
-        ->and(StorageUsageEvent::query()->sum('delta_bytes'))->toBe(11)
+        ->and((int) StorageUsageEvent::query()->sum('delta_bytes'))->toBe(11)
         ->and(StoredFile::query()->first()->mime_type)->toBe('video/mp4');
 
     Storage::disk('s3')->assertExists("users/{$mediaImport->user_id}/media/{$mediaImport->id}/Example-video/Example-video-abc123.mp4");

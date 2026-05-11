@@ -17,9 +17,19 @@ declare module 'vite/client' {
 }
 
 declare module '@inertiajs/core' {
+    interface Seo {
+        appName: string;
+        baseUrl: string;
+        defaultTitle: string;
+        defaultDescription: string;
+        defaultImage: string;
+        robots: string;
+    }
+
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            seo: Seo;
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;

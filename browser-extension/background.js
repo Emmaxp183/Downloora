@@ -96,5 +96,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({
       items: (mediaByTab.get(message.tabId) ?? []).filter((item) => !isIgnoredMediaUrl(item.url)),
     });
+
+    return;
+  }
+
+  if (message?.type === 'DOWNLOORA_GET_YOUTUBE_COOKIES') {
+    chrome.cookies.getAll({ domain: 'youtube.com' }, (cookies) => {
+      sendResponse({
+        cookies: cookies.map((cookie) => ({
+          domain: cookie.domain,
+          expirationDate: cookie.expirationDate,
+          hostOnly: cookie.hostOnly,
+          httpOnly: cookie.httpOnly,
+          name: cookie.name,
+          path: cookie.path,
+          sameSite: cookie.sameSite,
+          secure: cookie.secure,
+          session: cookie.session,
+          value: cookie.value,
+        })),
+      });
+    });
+
+    return true;
   }
 });

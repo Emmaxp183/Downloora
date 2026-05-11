@@ -15,6 +15,7 @@ beforeEach(function () {
         'torrents.qbittorrent.timeout' => 10,
         'torrents.qbittorrent.metadata_poll_attempts' => 1,
         'torrents.qbittorrent.metadata_poll_interval_ms' => 0,
+        'torrents.qbittorrent.performance_preferences' => [],
     ]);
 
     Http::preventStrayRequests();
@@ -51,7 +52,7 @@ test('it inspects magnet metadata with qbittorrent', function () {
         ->and($metadata->files)->toHaveCount(2);
 
     Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/add'
-        && $request['paused'] === 'false');
+        && $request['paused'] === 'true');
 
     Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/delete'
         && $request['hashes'] === '0123456789abcdef0123456789abcdef01234567');

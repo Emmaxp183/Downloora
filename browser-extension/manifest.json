@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Downloora Media Helper",
-  "description": "Detect public media URLs on the active page and open Downloora with the selected URL prefilled.",
-  "version": "0.1.4",
+  "description": "Detect public media URLs on the active page and send them to your Downloora project.",
+  "version": "0.1.5",
   "icons": {
     "16": "icons/logo-16.png",
     "32": "icons/logo-32.png",
@@ -29,6 +29,6 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["activeTab", "storage", "tabs", "webRequest"],
+  "permissions": ["activeTab", "cookies", "storage", "tabs", "webRequest"],
   "host_permissions": ["http://*/*", "https://*/*"]
 }

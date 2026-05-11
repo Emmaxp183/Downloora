@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Downloads\DownloadSpeedSampler;
 use App\Services\Storage\StorageQuota;
 use App\Services\Storage\StoredFileFolderPayloads;
+use App\Services\System\ServerMetrics;
 use App\Support\BillingPlans;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,6 +18,8 @@ class DashboardController extends Controller
         StorageQuota $storageQuota,
         StoredFileFolderPayloads $storedFileFolderPayloads,
         BillingPlans $billingPlans,
+        ServerMetrics $serverMetrics,
+        DownloadSpeedSampler $downloadSpeedSampler,
     ): Response {
         $user = $request->user();
         $subscription = $user->subscription($billingPlans->subscriptionType());
@@ -51,8 +55,9 @@ class DashboardController extends Controller
                 'has_stripe_customer' => $user->hasStripeId(),
                 'status' => $request->session()->get('status'),
             ],
-            'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent) : null,
-            'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport) : null,
+            'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent, $downloadSpeedSampler) : null,
+            'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport, $downloadSpeedSampler) : null,
+            'systemMetrics' => $serverMetrics->snapshot(),
             'prefillUrl' => $this->prefillUrl($request),
             'prefillAutoSubmit' => $this->prefillAutoSubmit($request),
             'prefillWishlistSave' => $this->prefillWishlistSave($request),
@@ -83,7 +88,7 @@ class DashboardController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function torrentPayload($torrent): array
+    private function torrentPayload($torrent, ?DownloadSpeedSampler $downloadSpeedSampler = null): array
     {
         return [
             'id' => $torrent->id,
@@ -92,6 +97,7 @@ class DashboardController extends Controller
             'progress' => $torrent->progress,
             'total_size_bytes' => $torrent->total_size_bytes,
             'downloaded_bytes' => $torrent->downloaded_bytes,
+            'download_speed_bytes_per_second' => $downloadSpeedSampler?->sample("torrent:{$torrent->id}", (int) $torrent->downloaded_bytes) ?? 0,
             'error_message' => $torrent->error_message,
         ];
     }
@@ -99,7 +105,7 @@ class DashboardController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function mediaImportPayload($mediaImport): array
+    private function mediaImportPayload($mediaImport, ?DownloadSpeedSampler $downloadSpeedSampler = null): array
     {
         return [
             'id' => $mediaImport->id,
@@ -112,6 +118,7 @@ class DashboardController extends Controller
             'duration_seconds' => $mediaImport->duration_seconds,
             'estimated_size_bytes' => $mediaImport->estimated_size_bytes,
             'downloaded_bytes' => $mediaImport->downloaded_bytes,
+            'download_speed_bytes_per_second' => $downloadSpeedSampler?->sample("media-import:{$mediaImport->id}", (int) $mediaImport->downloaded_bytes) ?? 0,
             'formats' => $mediaImport->formats ?? [],
             'selected_format' => $mediaImport->selected_format,
             'error_message' => $mediaImport->error_message,
