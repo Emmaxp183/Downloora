@@ -1,8 +1,17 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "php",
+            "command": "docker",
             "args": [
+                "compose",
+                "--project-directory",
+                "/root/Downloora",
+                "exec",
+                "-T",
+                "-e",
+                "APP_ENV=local",
+                "app",
+                "php",
                 "artisan",
                 "boost:mcp"
             ]

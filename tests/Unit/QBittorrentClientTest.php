@@ -4,42 +4,34 @@ use App\Enums\TorrentSourceType;
 use App\Enums\TorrentStatus;
 use App\Models\Torrent;
 use App\Models\User;
-use App\Services\Torrents\QBittorrentClient;
+use App\Services\Torrents\RqbitClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-test('it authenticates and adds a magnet torrent', function () {
+beforeEach(function () {
     config([
-        'torrents.qbittorrent.base_url' => 'http://qbittorrent.test',
-        'torrents.qbittorrent.username' => 'admin',
-        'torrents.qbittorrent.password' => 'secret',
-        'torrents.qbittorrent.timeout' => 10,
-        'torrents.qbittorrent.performance_preferences' => [
-            'dl_limit' => -1,
-            'up_limit' => -1,
-            'queueing_enabled' => false,
-            'max_active_uploads' => 150,
-            'connection_speed' => 10000,
-            'max_connec' => 64000,
-            'max_connec_per_torrent' => 16000,
-            'max_uploads' => 8000,
-            'max_uploads_per_torrent' => 2000,
-        ],
+        'torrents.rqbit.base_url' => 'http://rqbit.test',
+        'torrents.rqbit.timeout' => 10,
+        'torrents.rqbit.add_timeout' => 120,
+        'torrents.rqbit.metadata_timeout' => 30,
+        'torrents.rqbit.download_path' => '/downloads',
     ]);
 
     Http::preventStrayRequests();
+});
+
+test('it adds a magnet torrent to rqbit', function () {
     Http::fake([
-        'qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/app/setPreferences' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/add' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/setDownloadLimit' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/setUploadLimit' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/setForceStart' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/topPrio' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/reannounce' => Http::response('Ok.', 200),
+        'rqbit.test/torrents?*' => Http::response([
+            'id' => 0,
+            'details' => [
+                'info_hash' => '0123456789abcdef0123456789abcdef01234567',
+                'name' => 'Example Torrent',
+            ],
+        ], 200),
     ]);
 
     $torrent = Torrent::factory()
@@ -51,125 +43,85 @@ test('it authenticates and adds a magnet torrent', function () {
             'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
         ]);
 
-    app(QBittorrentClient::class)->addMagnet($torrent);
+    app(RqbitClient::class)->addMagnet($torrent);
 
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/auth/login'
-        && $request['username'] === 'admin'
-        && $request['password'] === 'secret');
+    Http::assertSent(fn ($request) => str_starts_with($request->url(), 'http://rqbit.test/torrents?')
+        && str_contains($request->url(), 'overwrite=true')
+        && str_contains($request->url(), 'output_folder=%2Fdownloads%2F0123456789abcdef0123456789abcdef01234567')
+        && $request->body() === $torrent->magnet_uri);
 
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/app/setPreferences'
-        && json_decode($request['json'], true) === [
-            'dl_limit' => -1,
-            'up_limit' => -1,
-            'queueing_enabled' => false,
-            'max_active_uploads' => 150,
-            'connection_speed' => 10000,
-            'max_connec' => 64000,
-            'max_connec_per_torrent' => 16000,
-            'max_uploads' => 8000,
-            'max_uploads_per_torrent' => 2000,
-        ]);
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/add'
-        && $request['urls'] === $torrent->magnet_uri
-        && $request['paused'] === 'false'
-        && $request['dlLimit'] === 0
-        && $request['upLimit'] === 0
-        && $request['sequentialDownload'] === 'false'
-        && $request['firstLastPiecePrio'] === 'false');
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/setDownloadLimit'
-        && $request['hashes'] === $torrent->info_hash
-        && $request['limit'] === 0);
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/setUploadLimit'
-        && $request['hashes'] === $torrent->info_hash
-        && $request['limit'] === 0);
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/setForceStart'
-        && $request['hashes'] === $torrent->info_hash
-        && $request['value'] === 'true');
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/topPrio'
-        && $request['hashes'] === $torrent->info_hash);
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/reannounce'
-        && $request['hashes'] === $torrent->info_hash);
+    expect($torrent->refresh()->qbittorrent_hash)->toBe('0123456789abcdef0123456789abcdef01234567');
 });
 
-test('it reads torrent details and files then deletes the torrent', function () {
-    config([
-        'torrents.qbittorrent.base_url' => 'http://qbittorrent.test',
-        'torrents.qbittorrent.username' => 'admin',
-        'torrents.qbittorrent.password' => 'secret',
-        'torrents.qbittorrent.timeout' => 10,
-    ]);
-
-    Http::preventStrayRequests();
+test('it lists torrent metadata without adding the torrent', function () {
     Http::fake([
-        'qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/info*' => Http::response([[
-            'hash' => 'abc123',
-            'name' => 'Example',
-            'progress' => 1,
-        ]], 200),
-        'qbittorrent.test/api/v2/torrents/files*' => Http::response([[
-            'name' => 'video.mp4',
-            'size' => 1000,
-        ]], 200),
-        'qbittorrent.test/api/v2/torrents/delete' => Http::response('Ok.', 200),
+        'rqbit.test/torrents?*' => Http::response([
+            'id' => null,
+            'details' => [
+                'info_hash' => '0123456789abcdef0123456789abcdef01234567',
+                'name' => 'Example Torrent',
+                'output_folder' => '/downloads/0123456789abcdef0123456789abcdef01234567',
+                'files' => [[
+                    'name' => 'video.mp4',
+                    'components' => ['Movies', 'video.mp4'],
+                    'length' => 1000,
+                ]],
+            ],
+        ], 200),
     ]);
 
-    $client = app(QBittorrentClient::class);
+    $torrent = Torrent::factory()
+        ->for(User::factory())
+        ->create([
+            'source_type' => TorrentSourceType::Magnet,
+            'status' => TorrentStatus::PendingMetadata,
+            'info_hash' => '0123456789abcdef0123456789abcdef01234567',
+            'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
+        ]);
 
-    expect($client->getTorrent('abc123'))->toMatchArray(['hash' => 'abc123'])
-        ->and($client->files('abc123'))->toHaveCount(1);
+    $metadata = app(RqbitClient::class)->inspect($torrent);
+
+    expect(data_get($metadata, 'details.name'))->toBe('Example Torrent')
+        ->and(app(RqbitClient::class)->normalizeFiles(data_get($metadata, 'details')))->toBe([
+            ['name' => 'Movies/video.mp4', 'size' => 1000],
+        ]);
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'list_only=true'));
+});
+
+test('it reads torrent details, stats, files, and deletes the torrent', function () {
+    Http::fake([
+        'rqbit.test/torrents/abc123/stats/v1' => Http::response([
+            'state' => 'live',
+            'progress_bytes' => 420,
+            'total_bytes' => 1000,
+            'finished' => false,
+        ], 200),
+        'rqbit.test/torrents/abc123' => Http::response([
+            'id' => 0,
+            'info_hash' => 'abc123',
+            'name' => 'Example',
+            'output_folder' => '/downloads/abc123',
+            'files' => [[
+                'name' => 'video.mp4',
+                'components' => ['video.mp4'],
+                'length' => 1000,
+            ]],
+        ], 200),
+        'rqbit.test/torrents/abc123/delete' => Http::response([], 200),
+    ]);
+
+    $client = app(RqbitClient::class);
+
+    expect($client->getTorrent('abc123'))->toMatchArray([
+        'hash' => 'abc123',
+        'progress' => 0.42,
+        'downloaded' => 420,
+    ])->and($client->files('abc123'))->toBe([
+        ['name' => 'video.mp4', 'size' => 1000],
+    ]);
 
     $client->delete('abc123');
 
-    Http::assertSent(fn ($request) => str_starts_with($request->url(), 'http://qbittorrent.test/api/v2/torrents/info')
-        && $request['hashes'] === 'abc123');
-
-    Http::assertSent(fn ($request) => str_starts_with($request->url(), 'http://qbittorrent.test/api/v2/torrents/files')
-        && $request['hash'] === 'abc123');
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/delete'
-        && $request['hashes'] === 'abc123'
-        && $request['deleteFiles'] === 'true');
-});
-
-test('it reuses an existing qBittorrent torrent when starting a duplicate magnet', function () {
-    config([
-        'torrents.qbittorrent.base_url' => 'http://qbittorrent.test',
-        'torrents.qbittorrent.username' => 'admin',
-        'torrents.qbittorrent.password' => 'secret',
-        'torrents.qbittorrent.timeout' => 10,
-        'torrents.qbittorrent.performance_preferences' => [],
-    ]);
-
-    Http::preventStrayRequests();
-    Http::fake([
-        'qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/add' => Http::response('Conflict', 409),
-        'qbittorrent.test/api/v2/torrents/setDownloadLimit' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/setUploadLimit' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/setForceStart' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/topPrio' => Http::response('Ok.', 200),
-        'qbittorrent.test/api/v2/torrents/reannounce' => Http::response('Ok.', 200),
-    ]);
-
-    $torrent = Torrent::factory()
-        ->for(User::factory())
-        ->create([
-            'source_type' => TorrentSourceType::Magnet,
-            'status' => TorrentStatus::Queued,
-            'info_hash' => '0123456789abcdef0123456789abcdef01234567',
-            'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
-        ]);
-
-    app(QBittorrentClient::class)->addMagnet($torrent);
-
-    Http::assertSent(fn ($request) => $request->url() === 'http://qbittorrent.test/api/v2/torrents/setForceStart'
-        && $request['hashes'] === $torrent->info_hash
-        && $request['value'] === 'true');
+    Http::assertSent(fn ($request) => $request->url() === 'http://rqbit.test/torrents/abc123/delete');
 });

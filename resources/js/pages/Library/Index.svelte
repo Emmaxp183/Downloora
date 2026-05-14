@@ -25,6 +25,9 @@
         size_bytes: number;
         download_url: string;
         stream_url: string;
+        cast_url: string | null;
+        adaptive_stream_url: string | null;
+        adaptive_stream_status: string | null;
         updated_at?: string | null;
     };
 

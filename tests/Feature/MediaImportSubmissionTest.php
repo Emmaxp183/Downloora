@@ -32,8 +32,10 @@ test('users can submit a public media url through the shared input', function ()
     Bus::assertDispatched(InspectMediaImport::class);
 });
 
-test('users with an active media import save submitted media urls to wishlist', function () {
+test('users at the active download limit save submitted media urls to wishlist', function () {
     Bus::fake();
+
+    config(['torrents.per_user_active_limit' => 1]);
 
     $user = User::factory()->create([
         'storage_quota_bytes' => 10 * 1024 * 1024,

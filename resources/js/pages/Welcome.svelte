@@ -21,6 +21,8 @@
     import { dashboard, login, register } from '@/routes';
     import {
         cloudTorrentStorage,
+        downloadSocialMediaVideos,
+        oneClickTorrentSeeding,
         privateTorrentCloud,
         seedrAlternative,
         torrentToCloud,
@@ -141,6 +143,14 @@
         {
             title: 'Private Torrent Cloud',
             href: privateTorrentCloud(),
+        },
+        {
+            title: 'Download Social Media Videos',
+            href: downloadSocialMediaVideos(),
+        },
+        {
+            title: 'One-Click Torrent Seeding',
+            href: oneClickTorrentSeeding(),
         },
     ];
 </script>
@@ -317,7 +327,7 @@
                                     Downloora
                                 </p>
                                 <p class="text-sm text-[#1A261D]/65">
-                                    700 MB starter quota
+                                    2 GB starter quota
                                 </p>
                             </div>
                         </div>

@@ -5,7 +5,7 @@ $gigabyte = 1024 * 1024 * 1024;
 return [
     'subscription_type' => env('DOWNLOORA_SUBSCRIPTION_TYPE', 'default'),
 
-    'default_quota_bytes' => (int) env('TORRENTS_DEFAULT_USER_QUOTA_BYTES', 734003200),
+    'default_quota_bytes' => (int) env('TORRENTS_DEFAULT_USER_QUOTA_BYTES', 2 * $gigabyte),
 
     'plans' => [
         'basic' => [

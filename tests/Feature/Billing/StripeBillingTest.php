@@ -24,7 +24,7 @@ test('subscription webhooks update the user storage quota', function () {
 
     $user = User::factory()->create([
         'stripe_id' => 'cus_downloora_test',
-        'storage_quota_bytes' => 734003200,
+        'storage_quota_bytes' => 2 * 1024 * 1024 * 1024,
     ]);
 
     $user->subscriptions()->create([
@@ -49,7 +49,7 @@ test('subscription webhooks update the user storage quota', function () {
 
 test('cancelled subscription webhooks reset the user storage quota', function () {
     config([
-        'billing.default_quota_bytes' => 734003200,
+        'billing.default_quota_bytes' => 2 * 1024 * 1024 * 1024,
         'billing.plans.pro.stripe_price_id' => 'price_downloora_pro_monthly',
     ]);
 
@@ -76,7 +76,7 @@ test('cancelled subscription webhooks reset the user storage quota', function ()
         ],
     ]));
 
-    expect($user->refresh()->storage_quota_bytes)->toBe(734003200);
+    expect($user->refresh()->storage_quota_bytes)->toBe(2 * 1024 * 1024 * 1024);
 });
 
 test('stripe subscription sync creates the local subscription and updates quota', function () {
@@ -87,7 +87,7 @@ test('stripe subscription sync creates the local subscription and updates quota'
 
     $user = User::factory()->create([
         'stripe_id' => 'cus_downloora_sync',
-        'storage_quota_bytes' => 734003200,
+        'storage_quota_bytes' => 2 * 1024 * 1024 * 1024,
     ]);
 
     $stripeSubscription = StripeSubscription::constructFrom([

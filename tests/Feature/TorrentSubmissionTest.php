@@ -103,8 +103,34 @@ test('uploaded torrent files must have a torrent extension', function () {
     Bus::assertNotDispatched(InspectTorrentMetadata::class);
 });
 
-test('users with an active torrent save submitted magnet links to wishlist', function () {
+test('users can submit another magnet torrent while below the active download limit', function () {
     Bus::fake();
+
+    $user = User::factory()->create();
+
+    Torrent::factory()->for($user)->create(['status' => TorrentStatus::Downloading]);
+
+    $this->actingAs($user)
+        ->from(route('dashboard'))
+        ->post('/torrents', [
+            'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
+        ])
+        ->assertRedirect(route('dashboard', absolute: false))
+        ->assertSessionHasNoErrors();
+
+    expect($user->torrents()->count())->toBe(2);
+    $this->assertDatabaseHas('torrents', [
+        'user_id' => $user->id,
+        'magnet_uri' => 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567',
+        'status' => TorrentStatus::PendingMetadata->value,
+    ]);
+    Bus::assertDispatched(InspectTorrentMetadata::class);
+});
+
+test('users at the active download limit save submitted magnet links to wishlist', function () {
+    Bus::fake();
+
+    config(['torrents.per_user_active_limit' => 1]);
 
     $user = User::factory()->create();
 
@@ -127,9 +153,11 @@ test('users with an active torrent save submitted magnet links to wishlist', fun
     Bus::assertNotDispatched(InspectTorrentMetadata::class);
 });
 
-test('users with an active torrent still cannot upload a torrent file', function () {
+test('users at the active download limit still cannot upload a torrent file', function () {
     Bus::fake();
     Storage::fake('s3');
+
+    config(['torrents.per_user_active_limit' => 1]);
 
     $user = User::factory()->create();
 

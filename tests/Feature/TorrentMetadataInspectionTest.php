@@ -94,6 +94,33 @@ test('it keeps metadata failures visible as active torrents', function () {
         ->and($user->torrents()->active()->whereKey($torrent)->exists())->toBeTrue();
 });
 
+test('it quickly retries when rqbit metadata is not ready yet', function () {
+    config([
+        'torrents.rqbit.metadata_poll_attempts' => 90,
+        'torrents.rqbit.metadata_poll_interval_ms' => 2000,
+    ]);
+
+    $user = User::factory()->create();
+    $torrent = Torrent::factory()->for($user)->create(['status' => TorrentStatus::PendingMetadata]);
+
+    app()->bind(TorrentMetadataInspector::class, fn () => new class implements TorrentMetadataInspector
+    {
+        public function inspect(Torrent $torrent): TorrentMetadata
+        {
+            throw new RuntimeException('rqbit did not return torrent metadata files.');
+        }
+    });
+
+    $job = (new InspectTorrentMetadata($torrent))->withFakeQueueInteractions();
+
+    app()->call([$job, 'handle']);
+
+    $job->assertReleased(delay: 2);
+
+    expect($torrent->refresh()->status)->toBe(TorrentStatus::PendingMetadata)
+        ->and($torrent->error_message)->toBeNull();
+});
+
 test('it completes instantly when matching torrent is already cached', function () {
     Bus::fake();
     Storage::fake('s3');

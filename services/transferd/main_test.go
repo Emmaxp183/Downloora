@@ -52,6 +52,49 @@ func TestTransferdServesLocalByteRanges(t *testing.T) {
 	}
 }
 
+func TestTransferdAddsAdaptiveSegmentHeaders(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "segment.ts"), []byte("segment"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := &server{
+		signingKey:       []byte("secret"),
+		localStorageRoot: root,
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/files?token="+testToken(t, "secret", claims{
+		Backend:      "local",
+		Key:          "segment.ts",
+		Name:         "segment.ts",
+		MimeType:     "video/mp2t",
+		SizeBytes:    7,
+		Disposition:  "inline; filename=segment.ts",
+		CacheControl: "private, max-age=300",
+		Cors:         true,
+		ExpiresAt:    time.Now().Add(time.Minute).Unix(),
+	}), nil)
+	response := httptest.NewRecorder()
+
+	srv.handleFile(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+
+	if got := response.Header().Get("Content-Type"); got != "video/mp2t" {
+		t.Fatalf("expected content type, got %q", got)
+	}
+
+	if got := response.Header().Get("Cache-Control"); got != "private, max-age=300" {
+		t.Fatalf("expected cache control, got %q", got)
+	}
+
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("expected cors header, got %q", got)
+	}
+}
+
 func TestTransferdRejectsExpiredTokens(t *testing.T) {
 	srv := &server{signingKey: []byte("secret")}
 	request := httptest.NewRequest(http.MethodGet, "/files?token="+testToken(t, "secret", claims{

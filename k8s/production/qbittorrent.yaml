@@ -1,160 +1,160 @@
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: qbittorrent-config
-data:
-  qBittorrent.conf: |
-    [LegalNotice]
-    Accepted=true
-
-    [BitTorrent]
-    Session\AddExtensionToIncompleteFiles=true
-    Session\AsyncIOThreadsCount=128
-    Session\DHTEnabled=true
-    Session\DefaultSavePath=/downloads
-    Session\DiskCacheSize=32768
-    Session\DiskIOType=1
-    Session\ExcludedFileNames=
-    Session\GlobalMaxInactiveSeedingMinutes=-1
-    Session\GlobalMaxRatio=-1
-    Session\GlobalMaxSeedingMinutes=-1
-    Session\LSDEnabled=true
-    Session\MaxActiveCheckingTorrents=5
-    Session\MaxActiveDownloads=100
-    Session\MaxActiveTorrents=150
-    Session\MaxActiveUploads=150
-    Session\MaxConnections=64000
-    Session\MaxConnectionsPerTorrent=16000
-    Session\MaxUploads=8000
-    Session\MaxUploadsPerTorrent=2000
-    Session\PeXEnabled=true
-    Session\Port=6881
-    Session\QueueingSystemEnabled=false
-    Session\SSL\Port=6882
-    Session\TempPath=/downloads/.incomplete
-    Session\TempPathEnabled=true
-    Session\uTPRateLimited=false
-
-    [Network]
-    PortForwardingEnabled=true
-
-    [Preferences]
-    Advanced\AnnounceToAllTrackers=true
-    Advanced\AnnounceToAllTiers=true
-    Advanced\osCache=true
-    Connection\PortRangeMin=6881
-    Connection\ResolvePeerCountries=false
-    Connection\UPnP=true
-    Downloads\SavePath=/downloads
-    WebUI\Address=*
-    WebUI\HostHeaderValidation=false
-    WebUI\LocalHostAuth=false
-    WebUI\Password_PBKDF2="@ByteArray(ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==)"
-    WebUI\Port=8080
-    WebUI\ServerDomains=*
-    WebUI\Username=admin
----
-apiVersion: v1
 kind: Service
 metadata:
-  name: qbittorrent
+  name: rqbit
 spec:
   selector:
-    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/name: rqbit
     app.kubernetes.io/part-of: downloora
   ports:
-    - name: webui
-      port: 8080
-      targetPort: webui
+    - name: http
+      port: 3030
+      targetPort: http
     - name: torrent-tcp
       port: 6881
       targetPort: torrent-tcp
       protocol: TCP
-    - name: torrent-udp
-      port: 6881
-      targetPort: torrent-udp
-      protocol: UDP
+    - name: torrent-tcp-alt
+      port: 6882
+      targetPort: torrent-tcp-alt
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: qbittorrent-peers
+  name: rqbit-peers
 spec:
   type: LoadBalancer
   selector:
-    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/name: rqbit
     app.kubernetes.io/part-of: downloora
   ports:
     - name: torrent-tcp
       port: 6881
       targetPort: torrent-tcp
       protocol: TCP
-    - name: torrent-udp
-      port: 6881
-      targetPort: torrent-udp
-      protocol: UDP
+    - name: torrent-tcp-alt
+      port: 6882
+      targetPort: torrent-tcp-alt
+      protocol: TCP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qbittorrent
+  name: rqbit
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: qbittorrent
+      app.kubernetes.io/name: rqbit
       app.kubernetes.io/part-of: downloora
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: qbittorrent
+        app.kubernetes.io/name: rqbit
         app.kubernetes.io/part-of: downloora
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
-        - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:latest
+        - name: rqbit
+          image: ikatson/rqbit:latest
           imagePullPolicy: IfNotPresent
+          command:
+            - rqbit
+            - server
+            - start
+            - --fastresume
+            - --persistence-location
+            - /config
+            - /downloads
           env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-            - name: TZ
+            - name: RQBIT_HTTP_API_LISTEN_ADDR
+              value: 0.0.0.0:3030
+            - name: RQBIT_TCP_LISTEN_MIN_PORT
               valueFrom:
                 configMapKeyRef:
                   name: downloora-config
-                  key: TZ
-            - name: WEBUI_PORT
-              value: "8080"
-            - name: TORRENTING_PORT
-              value: "6881"
+                  key: RQBIT_TORRENTING_PORT
+            - name: RQBIT_TCP_LISTEN_MAX_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_TORRENTING_MAX_PORT
+            - name: RQBIT_RUNTIME_WORKER_THREADS
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_WORKER_THREADS
+            - name: RQBIT_RUNTIME_MAX_BLOCKING_THREADS
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_MAX_BLOCKING_THREADS
+            - name: RQBIT_CONCURRENT_INIT_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_CONCURRENT_INIT_LIMIT
+            - name: RQBIT_TRACKER_REFRESH_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_TRACKER_REFRESH_INTERVAL
+            - name: RQBIT_PEER_CONNECT_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_PEER_CONNECT_TIMEOUT
+            - name: RQBIT_PEER_READ_WRITE_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_PEER_READ_WRITE_TIMEOUT
+            - name: DHT_QUERIES_PER_SECOND
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_DHT_QUERIES_PER_SECOND
+            - name: RQBIT_RATELIMIT_UPLOAD
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_UPLOAD_LIMIT_BYTES
+            - name: RQBIT_RATELIMIT_DOWNLOAD
+              valueFrom:
+                configMapKeyRef:
+                  name: downloora-config
+                  key: RQBIT_DOWNLOAD_LIMIT_BYTES
           ports:
-            - name: webui
-              containerPort: 8080
+            - name: http
+              containerPort: 3030
             - name: torrent-tcp
               containerPort: 6881
               protocol: TCP
             - name: torrent-udp
               containerPort: 6881
               protocol: UDP
+              protocol: TCP
+            - name: torrent-tcp-alt
+              containerPort: 6882
+              protocol: TCP
           readinessProbe:
             httpGet:
               path: /
-              port: webui
-            initialDelaySeconds: 30
+              port: http
+            initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
             - name: qbittorrent-downloads
               mountPath: /downloads
-            - name: qbittorrent-config-file
-              mountPath: /config/qBittorrent/qBittorrent.conf
-              subPath: qBittorrent.conf
+            - name: rqbit-config
+              mountPath: /config
       volumes:
         - name: qbittorrent-downloads
           persistentVolumeClaim:
             claimName: qbittorrent-downloads
-        - name: qbittorrent-config-file
-          configMap:
-            name: qbittorrent-config
+        - name: rqbit-config
+          emptyDir: {}

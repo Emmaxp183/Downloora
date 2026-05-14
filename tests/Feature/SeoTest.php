@@ -12,7 +12,9 @@ test('landing page includes crawler metadata', function () {
         ->assertSee('/cloud-torrent-storage', false)
         ->assertSee('/torrent-to-cloud', false)
         ->assertSee('/seedr-alternative', false)
-        ->assertSee('/private-torrent-cloud', false);
+        ->assertSee('/private-torrent-cloud', false)
+        ->assertSee('/download-social-media-videos', false)
+        ->assertSee('/one-click-torrent-seeding', false);
 });
 
 test('public seo pages include page specific metadata', function (string $pageKey) {
@@ -31,6 +33,8 @@ test('public seo pages include page specific metadata', function (string $pageKe
     'torrent to cloud' => 'torrent-to-cloud',
     'seedr alternative' => 'seedr-alternative',
     'private torrent cloud' => 'private-torrent-cloud',
+    'download social media videos' => 'download-social-media-videos',
+    'one click torrent seeding' => 'one-click-torrent-seeding',
 ]);
 
 test('robots file points crawlers to the sitemap', function () {
@@ -56,6 +60,8 @@ test('sitemap exposes public pages', function () {
         ->assertSee('<loc>https://downloora.com/torrent-to-cloud</loc>', false)
         ->assertSee('<loc>https://downloora.com/seedr-alternative</loc>', false)
         ->assertSee('<loc>https://downloora.com/private-torrent-cloud</loc>', false)
+        ->assertSee('<loc>https://downloora.com/download-social-media-videos</loc>', false)
+        ->assertSee('<loc>https://downloora.com/one-click-torrent-seeding</loc>', false)
         ->assertSee('<changefreq>weekly</changefreq>', false)
         ->assertSee('<priority>1.0</priority>', false);
 });

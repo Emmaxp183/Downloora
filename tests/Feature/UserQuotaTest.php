@@ -17,5 +17,17 @@ test('new users receive the default storage quota', function () {
 
     $user = User::query()->where('email', 'seed@example.com')->firstOrFail();
 
-    expect($user->storage_quota_bytes)->toBe(734003200);
+    expect($user->storage_quota_bytes)->toBe(2 * 1024 * 1024 * 1024);
+});
+
+test('legacy starter quotas are upgraded to two gigabytes', function () {
+    $user = User::factory()->create([
+        'storage_quota_bytes' => 700 * 1024 * 1024,
+    ]);
+
+    $migration = require database_path('migrations/2026_05_11_221519_upgrade_existing_starter_user_quotas_to_two_gigabytes.php');
+
+    $migration->up();
+
+    expect($user->refresh()->storage_quota_bytes)->toBe(2 * 1024 * 1024 * 1024);
 });

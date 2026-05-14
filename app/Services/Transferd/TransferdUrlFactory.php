@@ -11,23 +11,55 @@ class TransferdUrlFactory
 {
     public function enabledFor(StoredFile $storedFile): bool
     {
+        return $this->enabledForDisk($storedFile->s3_disk)
+            && filled($storedFile->s3_key);
+    }
+
+    public function enabledForDisk(?string $diskName): bool
+    {
         return (bool) config('transferd.enabled', false)
-            && in_array($storedFile->s3_disk, ['local', 's3'], true)
-            && filled($storedFile->s3_key)
+            && in_array($diskName, ['local', 's3'], true)
             && filled($this->signingKey())
             && filled((string) config('transferd.public_url'));
     }
 
     public function url(Request $request, StoredFile $storedFile, string $disposition): string
     {
+        return $this->objectUrl(
+            request: $request,
+            backend: $storedFile->s3_disk,
+            bucket: $storedFile->s3_bucket ?: config('filesystems.disks.s3.bucket'),
+            key: $storedFile->s3_key,
+            name: $storedFile->name,
+            mimeType: $storedFile->mime_type ?: 'application/octet-stream',
+            sizeBytes: max(0, $storedFile->size_bytes),
+            disposition: $disposition,
+        );
+    }
+
+    public function objectUrl(
+        Request $request,
+        string $backend,
+        ?string $bucket,
+        string $key,
+        string $name,
+        string $mimeType,
+        int $sizeBytes,
+        string $disposition,
+        ?string $cacheControl = null,
+        bool $cors = false,
+    ): string
+    {
         $payload = $this->encode([
-            'backend' => $storedFile->s3_disk,
-            'bucket' => $storedFile->s3_bucket ?: config('filesystems.disks.s3.bucket'),
-            'key' => $storedFile->s3_key,
-            'name' => $storedFile->name,
-            'mime_type' => $storedFile->mime_type ?: 'application/octet-stream',
-            'size_bytes' => max(0, $storedFile->size_bytes),
+            'backend' => $backend,
+            'bucket' => $bucket,
+            'key' => $key,
+            'name' => $name,
+            'mime_type' => $mimeType,
+            'size_bytes' => max(0, $sizeBytes),
             'disposition' => $disposition,
+            'cache_control' => $cacheControl,
+            'cors' => $cors,
             'expires_at' => Carbon::now()->addSeconds((int) config('transferd.url_ttl_seconds', 300))->unix(),
         ]);
 

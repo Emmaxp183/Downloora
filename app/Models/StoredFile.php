@@ -21,6 +21,13 @@ use Illuminate\Support\Facades\Storage;
     'name',
     'mime_type',
     'size_bytes',
+    'adaptive_stream_status',
+    'adaptive_stream_disk',
+    'adaptive_stream_bucket',
+    'adaptive_stream_playlist_key',
+    'adaptive_stream_variants',
+    'adaptive_stream_error',
+    'adaptive_stream_generated_at',
 ])]
 class StoredFile extends Model
 {
@@ -36,6 +43,8 @@ class StoredFile extends Model
     {
         return [
             'size_bytes' => 'integer',
+            'adaptive_stream_variants' => 'array',
+            'adaptive_stream_generated_at' => 'datetime',
         ];
     }
 
@@ -69,5 +78,13 @@ class StoredFile extends Model
     public function s3Disk(): FilesystemAdapter
     {
         return Storage::disk($this->s3_disk);
+    }
+
+    /**
+     * Get the configured filesystem disk for adaptive HLS assets.
+     */
+    public function adaptiveStreamDisk(): FilesystemAdapter
+    {
+        return Storage::disk($this->adaptive_stream_disk ?? $this->s3_disk);
     }
 }

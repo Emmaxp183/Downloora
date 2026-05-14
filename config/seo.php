@@ -32,6 +32,16 @@ return [
             'changefreq' => 'monthly',
             'priority' => '0.8',
         ],
+        [
+            'route' => 'seo.download-social-media-videos',
+            'changefreq' => 'monthly',
+            'priority' => '0.9',
+        ],
+        [
+            'route' => 'seo.one-click-torrent-seeding',
+            'changefreq' => 'monthly',
+            'priority' => '0.9',
+        ],
     ],
 
     'pages' => [
@@ -126,7 +136,7 @@ return [
                 ],
                 [
                     'title' => 'Built for self-hosting',
-                    'copy' => 'The Laravel, Docker, qBittorrent, and RustFS stack gives you a clear deployment path for your own cloud torrent service.',
+                    'copy' => 'The Laravel, Docker, rqbit, and RustFS stack gives you a clear deployment path for your own cloud torrent service.',
                 ],
             ],
             'questions' => [
@@ -172,6 +182,76 @@ return [
                 [
                     'question' => 'Can users access files on mobile?',
                     'answer' => 'Yes. The browser interface is designed for desktop and mobile access.',
+                ],
+            ],
+        ],
+        'download-social-media-videos' => [
+            'route' => 'seo.download-social-media-videos',
+            'path' => '/download-social-media-videos',
+            'title' => 'Download Social Media Videos',
+            'meta_title' => 'Download Social Media Videos with Just the Link',
+            'description' => 'Download social media videos with just the link. Paste a video URL into Downloora, let the server fetch it, and save the file to private cloud storage.',
+            'eyebrow' => 'Social Media Video Downloader',
+            'heading' => 'Download social media videos with just the link',
+            'intro' => 'Downloora turns supported social media video links into private cloud downloads. Paste the URL, choose an available format when needed, and keep completed videos in your browser library.',
+            'image' => '/image2.jpg',
+            'features' => [
+                [
+                    'title' => 'Paste the video link',
+                    'copy' => 'Add a supported social media URL from the dashboard instead of installing a desktop downloader or browser extension.',
+                ],
+                [
+                    'title' => 'Save to private storage',
+                    'copy' => 'Fetched videos are attached to your account library, where they follow the same quota and access rules as other downloads.',
+                ],
+                [
+                    'title' => 'Stream or download later',
+                    'copy' => 'Open completed videos in the browser when supported, download the file directly, or keep it organized for later access.',
+                ],
+            ],
+            'questions' => [
+                [
+                    'question' => 'How do I download social media videos with Downloora?',
+                    'answer' => 'Paste a supported social media video URL into Downloora, pick a format if the app asks for one, and let the server save the completed video to your private library.',
+                ],
+                [
+                    'question' => 'Do I need more than the video link?',
+                    'answer' => 'For supported public media, the link is usually enough. Some platforms may require account access or cookies when they restrict video metadata.',
+                ],
+            ],
+        ],
+        'one-click-torrent-seeding' => [
+            'route' => 'seo.one-click-torrent-seeding',
+            'path' => '/one-click-torrent-seeding',
+            'title' => 'One-Click Torrent Seeding',
+            'meta_title' => 'One-Click Torrent Seeding for Large Files',
+            'description' => 'Seed large torrent files from a private cloud workflow. Add a legal magnet link or .torrent file once and let Downloora handle the remote transfer and seeding setup.',
+            'eyebrow' => 'Large File Seeding',
+            'heading' => 'Seed large torrent files with one click',
+            'intro' => 'Downloora gives legal torrents a server-side workflow: paste a magnet link or upload a .torrent file, let rqbit run the transfer remotely, and keep completed torrents available for seeding when your deployment allows it.',
+            'image' => '/Image3.jpg',
+            'features' => [
+                [
+                    'title' => 'One-click torrent start',
+                    'copy' => 'Paste a magnet link or upload a .torrent file from the dashboard. Downloora sends the job to rqbit for the remote transfer.',
+                ],
+                [
+                    'title' => 'Built for large files',
+                    'copy' => 'Server-side transfers keep big downloads away from laptops and phones while the dashboard tracks progress, size, and completion state.',
+                ],
+                [
+                    'title' => 'Cloud seeding workflow',
+                    'copy' => 'Completed torrents can stay in rqbit after import, so eligible legal torrents remain available for seeding without leaving a personal device online.',
+                ],
+            ],
+            'questions' => [
+                [
+                    'question' => 'Can Downloora seed large torrents from the cloud?',
+                    'answer' => 'Yes. Downloora can keep completed rqbit transfers available after import when the deployment is configured to retain torrents after download.',
+                ],
+                [
+                    'question' => 'What files should I seed with Downloora?',
+                    'answer' => 'Use Downloora only for legal torrents and files you own, created, or have permission to download and share.',
                 ],
             ],
         ],

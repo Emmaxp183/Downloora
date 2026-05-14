@@ -44,21 +44,23 @@ class DownloadResourceProfile
     {
         $cores = $this->cpuCores();
         $memoryBytes = $this->memoryBytes();
+        $targetBandwidthMbps = max(1, (int) config('media.yt_dlp.target_bandwidth_mbps', 10000));
+        $bandwidthSegments = max(32, (int) ceil($targetBandwidthMbps / 10));
 
         if ($cores >= 32 && $memoryBytes >= 32 * 1024 * 1024 * 1024) {
-            return 192;
+            return max(192, $bandwidthSegments);
         }
 
         if ($cores >= 16 && $memoryBytes >= 16 * 1024 * 1024 * 1024) {
-            return 128;
+            return max(128, $bandwidthSegments);
         }
 
         if ($cores >= 8 && $memoryBytes >= 8 * 1024 * 1024 * 1024) {
-            return 96;
+            return max(96, min(192, $bandwidthSegments));
         }
 
         if ($cores >= 4 && $memoryBytes >= 4 * 1024 * 1024 * 1024) {
-            return 64;
+            return max(64, min(128, $bandwidthSegments));
         }
 
         return 32;

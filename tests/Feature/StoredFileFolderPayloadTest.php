@@ -23,16 +23,24 @@ test('stored files are grouped into torrent folders', function () {
         'size_bytes' => 300,
     ]);
 
+    StoredFile::factory()->for($user)->for($torrent)->create([
+        'name' => 'subtitle.srt',
+        'original_path' => 'Example Torrent/Subs/subtitle.srt',
+        'size_bytes' => 25,
+    ]);
+
     $folders = app(StoredFileFolderPayloads::class)
         ->fromFiles($user->storedFiles()->with('torrent')->get());
+
+    $payloadFiles = collect($folders->first()['files']);
 
     expect($folders)->toHaveCount(1)
         ->and($folders->first()['id'])->toBe('torrent-'.$torrent->id)
         ->and($folders->first()['torrent_id'])->toBe($torrent->id)
         ->and($folders->first()['name'])->toBe('Example Torrent')
         ->and($folders->first()['download_url'])->toContain('/folders/'.$torrent->id.'/download')
-        ->and($folders->first()['size_bytes'])->toBe(1000)
-        ->and($folders->first()['files'])->toHaveCount(2)
-        ->and($folders->first()['files'][0]['name'])->toBe('poster.jpg')
-        ->and($folders->first()['files'][1]['name'])->toBe('video.mp4');
+        ->and($folders->first()['size_bytes'])->toBe(1025)
+        ->and($folders->first()['files'])->toHaveCount(3)
+        ->and($payloadFiles->pluck('name')->all())->toContain('poster.jpg', 'subtitle.srt', 'video.mp4')
+        ->and($payloadFiles->pluck('original_path')->all())->toContain('Example Torrent/Subs/subtitle.srt');
 });

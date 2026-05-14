@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Listeners\SyncStripeSubscriptionQuota;
-use App\Services\Torrents\QBittorrentMetadataInspector;
+use App\Services\Torrents\RqbitClient;
+use App\Services\Torrents\RqbitMetadataInspector;
+use App\Services\Torrents\TorrentEngineClient;
 use App\Services\Torrents\TorrentMetadataInspector;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -20,7 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(TorrentMetadataInspector::class, QBittorrentMetadataInspector::class);
+        $this->app->bind(TorrentEngineClient::class, RqbitClient::class);
+        $this->app->bind(TorrentMetadataInspector::class, RqbitMetadataInspector::class);
     }
 
     /**

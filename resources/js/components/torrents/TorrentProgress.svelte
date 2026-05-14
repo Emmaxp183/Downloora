@@ -21,6 +21,27 @@
     const progress = $derived(Math.min(100, Math.max(0, torrent.progress)));
     const status = $derived(torrent.status.replaceAll('_', ' '));
 
+    const formatBytes = (bytes: number): string => {
+        if (bytes >= 1024 * 1024 * 1024) {
+            return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+        }
+
+        if (bytes >= 1024 * 1024) {
+            return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+        }
+
+        if (bytes >= 1024) {
+            return `${(bytes / 1024).toFixed(1)} KB`;
+        }
+
+        return `${Math.round(bytes)} B`;
+    };
+    const size = $derived(
+        torrent.total_size_bytes === null
+            ? 'Checking size'
+            : formatBytes(torrent.total_size_bytes),
+    );
+
     const formatRate = (bytesPerSecond: number): string => {
         if (bytesPerSecond >= 1024 * 1024 * 1024) {
             return `${(bytesPerSecond / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
@@ -66,7 +87,9 @@
             <p
                 class="mt-1 text-xs font-medium capitalize text-muted-foreground"
             >
-                {status} · {formatRate(torrent.download_speed_bytes_per_second)}
+                {status} · {size} · {formatRate(
+                    torrent.download_speed_bytes_per_second,
+                )}
             </p>
             <div class="downloora-progress mt-2">
                 <div

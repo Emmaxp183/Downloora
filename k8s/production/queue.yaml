@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: downloora-queue
 spec:
-  replicas: 2
+  replicas: 5
   selector:
     matchLabels:
       app.kubernetes.io/name: downloora-queue

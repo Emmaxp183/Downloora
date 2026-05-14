@@ -237,6 +237,43 @@ test('it adapts media downloader segmentation to available CPU and RAM', functio
         ->and($command)->toContain('aria2c:--continue=true --allow-overwrite=true --auto-file-renaming=false --file-allocation=none --optimize-concurrent-downloads=true --summary-interval=1 --max-connection-per-server=16 --split=192 --min-split-size=1M --piece-length=1M --disk-cache=1024M');
 });
 
+test('it targets ten gigabit media downloads on high capacity servers', function () {
+    config([
+        'media.yt_dlp.target_bandwidth_mbps' => 10000,
+        'media.yt_dlp.concurrent_fragments' => 256,
+        'media.yt_dlp.max_concurrent_fragments' => 1024,
+        'media.yt_dlp.external_downloader' => 'aria2c',
+        'media.yt_dlp.external_downloader_args' => null,
+        'media.yt_dlp.segment_connections' => 256,
+        'media.yt_dlp.max_segment_connections' => 1024,
+        'media.yt_dlp.segment_split' => 256,
+        'media.yt_dlp.max_segment_split' => 1024,
+        'media.yt_dlp.segment_min_split_size' => '1M',
+        'media.yt_dlp.segment_piece_length' => '1M',
+        'media.yt_dlp.segment_disk_cache' => '1024M',
+    ]);
+
+    app()->instance(DownloadResourceProfile::class, new class extends DownloadResourceProfile
+    {
+        protected function read(string $path): ?string
+        {
+            return match ($path) {
+                '/proc/stat' => "cpu  1 0 1 1 0 0 0 0 0 0\n".collect(range(0, 15))->map(fn (int $core): string => "cpu{$core} 1 0 1 1 0 0 0 0 0 0")->implode("\n"),
+                '/proc/meminfo' => "MemTotal:       67108864 kB\nMemAvailable:  60000000 kB\n",
+                default => null,
+            };
+        }
+    });
+
+    $client = new YtDlpClient;
+    $method = new ReflectionMethod(YtDlpClient::class, 'downloadCommand');
+    $command = $method->invoke($client, 'https://example.com/video', 'best', '/tmp/downloora-media-test');
+
+    expect($command)->toContain('--concurrent-fragments')
+        ->and($command)->toContain('1000')
+        ->and($command)->toContain('aria2c:--continue=true --allow-overwrite=true --auto-file-renaming=false --file-allocation=none --optimize-concurrent-downloads=true --summary-interval=1 --max-connection-per-server=16 --split=1000 --min-split-size=1M --piece-length=1M --disk-cache=1024M');
+});
+
 test('it converts configured gigabyte cache sizes to aria2 compatible megabytes', function () {
     config([
         'media.yt_dlp.adaptive_segments' => false,

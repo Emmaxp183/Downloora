@@ -1,4 +1,4 @@
 [mcp_servers.laravel-boost]
-command = "php"
-args = ["artisan", "boost:mcp"]
-cwd = "/Users/emmanuelmensah/Desktop/seedr"
+command = "docker"
+args = ["compose", "--project-directory", "/root/Downloora", "exec", "-T", "-e", "APP_ENV=local", "app", "php", "artisan", "boost:mcp"]
+cwd = "/root/Downloora"

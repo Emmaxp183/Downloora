@@ -9,6 +9,7 @@ use App\Models\StoredFile;
 use App\Services\Media\YtDlpClient;
 use App\Services\Storage\ObjectStorageUploader;
 use App\Services\Storage\StorageQuota;
+use App\Support\VideoFiles;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -100,7 +101,9 @@ class DownloadMediaImport implements ShouldQueue
             $s3Key = $this->s3Key($mediaImport, $localPath);
             $mimeType = $uploader->uploadFile($s3Key, $localPath);
 
-            DB::transaction(function () use ($mediaImport, $s3Key, $localPath, $sizeBytes, $mimeType): void {
+            $storedFile = null;
+
+            DB::transaction(function () use ($mediaImport, $s3Key, $localPath, $sizeBytes, $mimeType, &$storedFile): void {
                 $storedFile = StoredFile::create([
                     'user_id' => $mediaImport->user_id,
                     'torrent_id' => null,
@@ -134,6 +137,10 @@ class DownloadMediaImport implements ShouldQueue
                     'error_message' => null,
                 ])->save();
             });
+
+            if ($storedFile instanceof StoredFile && $this->shouldGenerateAdaptiveStream($storedFile)) {
+                GenerateAdaptiveStream::dispatch($storedFile);
+            }
 
             @unlink($localPath);
         } catch (Throwable $throwable) {
@@ -201,5 +208,12 @@ class DownloadMediaImport implements ShouldQueue
                 @unlink($path);
             }
         }
+    }
+
+    private function shouldGenerateAdaptiveStream(StoredFile $storedFile): bool
+    {
+        return (bool) config('media.adaptive.enabled', true)
+            && ! app()->environment('testing')
+            && VideoFiles::isVideo($storedFile);
     }
 }

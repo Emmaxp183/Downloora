@@ -14,11 +14,7 @@
 <script lang="ts">
     import { page, router, usePoll } from '@inertiajs/svelte';
     import Clock3 from 'lucide-svelte/icons/clock-3';
-    import Cpu from 'lucide-svelte/icons/cpu';
-    import Gauge from 'lucide-svelte/icons/gauge';
-    import MemoryStick from 'lucide-svelte/icons/memory-stick';
     import Search from 'lucide-svelte/icons/search';
-    import Wifi from 'lucide-svelte/icons/wifi';
     import AppHead from '@/components/AppHead.svelte';
     import PlanPickerDialog from '@/components/billing/PlanPickerDialog.svelte';
     import FileFolderRow from '@/components/files/FileFolderRow.svelte';
@@ -47,6 +43,9 @@
         size_bytes: number;
         download_url: string;
         stream_url: string;
+        cast_url: string | null;
+        adaptive_stream_url: string | null;
+        adaptive_stream_status: string | null;
         updated_at?: string | null;
     };
 
@@ -98,35 +97,17 @@
         created_at?: string | null;
     };
 
-    type SystemMetrics = {
-        cpu: {
-            usage_percent: number | null;
-            cores: number;
-        };
-        memory: {
-            used_bytes: number | null;
-            total_bytes: number | null;
-            usage_percent: number | null;
-        };
-        network: {
-            received_bytes_per_second: number;
-            transmitted_bytes_per_second: number;
-            total_bytes_per_second: number;
-        };
-        sampled_at: string;
-    };
-
     let {
         quota,
         activeTorrent,
         activeMediaImport,
+        activeDownloadLimitReached,
         prefillUrl,
         prefillAutoSubmit,
         prefillWishlistSave,
         wishlistItems,
         recentFileFolders,
         billing,
-        systemMetrics,
     }: {
         quota: {
             used_bytes: number;
@@ -141,12 +122,12 @@
         };
         activeTorrent: Torrent | null;
         activeMediaImport: MediaImport | null;
+        activeDownloadLimitReached: boolean;
         prefillUrl: string | null;
         prefillAutoSubmit: boolean;
         prefillWishlistSave: boolean;
         wishlistItems: WishlistItem[];
         recentFileFolders: FileFolder[];
-        systemMetrics: SystemMetrics;
     } = $props();
 
     const user = $derived(page.props.auth.user);
@@ -175,26 +156,6 @@
         return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
     };
 
-    const formatRate = (bytesPerSecond: number | null): string => {
-        if (!bytesPerSecond) {
-            return '0 B/s';
-        }
-
-        if (bytesPerSecond >= 1024 * 1024 * 1024) {
-            return `${(bytesPerSecond / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
-        }
-
-        if (bytesPerSecond >= 1024 * 1024) {
-            return `${(bytesPerSecond / 1024 / 1024).toFixed(2)} MB/s`;
-        }
-
-        if (bytesPerSecond >= 1024) {
-            return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
-        }
-
-        return `${Math.round(bytesPerSecond)} B/s`;
-    };
-
     const quotaPercent = $derived(
         quota.quota_bytes > 0
             ? Math.min(
@@ -209,14 +170,6 @@
                 activeMediaImport.status,
             ),
     );
-    const activeDownload = $derived(
-        activeTorrent !== null || activeMediaImport !== null,
-    );
-    const activeDownloadSpeed = $derived(
-        activeTorrent?.download_speed_bytes_per_second ??
-            activeMediaImport?.download_speed_bytes_per_second ??
-            0,
-    );
 
     const { start: startPolling, stop: stopPolling } = usePoll(
         2000,
@@ -225,7 +178,7 @@
                 'quota',
                 'activeTorrent',
                 'activeMediaImport',
-                'systemMetrics',
+                'activeDownloadLimitReached',
                 'recentTorrents',
                 'recentFileFolders',
             ],
@@ -244,13 +197,7 @@
     });
 
     $effect(() => {
-        if (
-            !prefillAutoSubmit ||
-            prefillSubmitted ||
-            !prefillUrl ||
-            activeTorrent ||
-            activeMediaImport
-        ) {
+        if (!prefillAutoSubmit || prefillSubmitted || !prefillUrl) {
             return;
         }
 
@@ -343,109 +290,10 @@
             class="downloora-card flex min-w-0 items-center bg-[var(--downloora-paper)] p-4"
         >
             <TorrentSubmitForm
-                {activeDownload}
+                downloadLimitReached={activeDownloadLimitReached}
                 initialUrl={prefillUrl}
                 {wishlistItems}
             />
-        </div>
-    </section>
-
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div class="downloora-card bg-[var(--downloora-paper)] p-4">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p
-                        class="text-xs font-black uppercase text-muted-foreground"
-                    >
-                        Download
-                    </p>
-                    <p class="mt-1 text-xl font-black tabular-nums">
-                        {formatRate(activeDownloadSpeed)}
-                    </p>
-                </div>
-                <span
-                    class="flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-lime)] text-[var(--downloora-ink)]"
-                >
-                    <Gauge class="size-5" />
-                </span>
-            </div>
-        </div>
-
-        <div class="downloora-card bg-[var(--downloora-paper)] p-4">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p
-                        class="text-xs font-black uppercase text-muted-foreground"
-                    >
-                        CPU
-                    </p>
-                    <p class="mt-1 text-xl font-black tabular-nums">
-                        {systemMetrics.cpu.usage_percent ?? 0}%
-                    </p>
-                </div>
-                <span
-                    class="flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-purple)] text-[var(--downloora-paper)]"
-                >
-                    <Cpu class="size-5" />
-                </span>
-            </div>
-            <p class="mt-2 text-xs font-semibold text-muted-foreground">
-                {systemMetrics.cpu.cores} cores available
-            </p>
-        </div>
-
-        <div class="downloora-card bg-[var(--downloora-paper)] p-4">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p
-                        class="text-xs font-black uppercase text-muted-foreground"
-                    >
-                        RAM
-                    </p>
-                    <p class="mt-1 text-xl font-black tabular-nums">
-                        {systemMetrics.memory.usage_percent ?? 0}%
-                    </p>
-                </div>
-                <span
-                    class="flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-orange)] text-[var(--downloora-ink)]"
-                >
-                    <MemoryStick class="size-5" />
-                </span>
-            </div>
-            <p class="mt-2 text-xs font-semibold text-muted-foreground">
-                {formatBytes(systemMetrics.memory.used_bytes)} / {formatBytes(
-                    systemMetrics.memory.total_bytes,
-                )}
-            </p>
-        </div>
-
-        <div class="downloora-card bg-[var(--downloora-paper)] p-4">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p
-                        class="text-xs font-black uppercase text-muted-foreground"
-                    >
-                        Internet
-                    </p>
-                    <p class="mt-1 text-xl font-black tabular-nums">
-                        {formatRate(
-                            systemMetrics.network.total_bytes_per_second,
-                        )}
-                    </p>
-                </div>
-                <span
-                    class="flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-green)] text-[var(--downloora-paper)]"
-                >
-                    <Wifi class="size-5" />
-                </span>
-            </div>
-            <p class="mt-2 text-xs font-semibold text-muted-foreground">
-                {formatRate(systemMetrics.network.received_bytes_per_second)}
-                down · {formatRate(
-                    systemMetrics.network.transmitted_bytes_per_second,
-                )}
-                up
-            </p>
         </div>
     </section>
 

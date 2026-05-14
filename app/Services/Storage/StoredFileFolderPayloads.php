@@ -3,7 +3,9 @@
 namespace App\Services\Storage;
 
 use App\Models\StoredFile;
+use App\Support\VideoFiles;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 
 class StoredFileFolderPayloads
@@ -106,8 +108,41 @@ class StoredFileFolderPayloads
             'size_bytes' => $file->size_bytes,
             'download_url' => URL::signedRoute('files.download', $file),
             'stream_url' => URL::signedRoute('files.stream', $file),
+            'cast_url' => $this->castUrl($file),
+            'adaptive_stream_url' => $this->adaptiveStreamUrl($file),
+            'adaptive_stream_status' => $file->adaptive_stream_status,
             'updated_at' => $file->updated_at?->toIso8601String(),
         ];
+    }
+
+    private function castUrl(StoredFile $file): ?string
+    {
+        if (! VideoFiles::isVideo($file)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'files.cast',
+            Carbon::now()->addSeconds((int) config('media.cast_url_ttl_seconds', 21600)),
+            $file,
+        );
+    }
+
+    private function adaptiveStreamUrl(StoredFile $file): ?string
+    {
+        if (
+            $file->adaptive_stream_status !== 'ready'
+            || ! filled($file->adaptive_stream_disk)
+            || ! filled($file->adaptive_stream_playlist_key)
+        ) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'files.hls.manifest',
+            Carbon::now()->addSeconds((int) config('media.adaptive.url_ttl_seconds', 21600)),
+            $file,
+        );
     }
 
     private function fallbackFolderName(StoredFile $file): string

@@ -36,11 +36,28 @@ Route::get('seedr-alternative', [SeoPageController::class, 'show'])
 Route::get('private-torrent-cloud', [SeoPageController::class, 'show'])
     ->defaults('page', 'private-torrent-cloud')
     ->name('seo.private-torrent-cloud');
+Route::get('download-social-media-videos', [SeoPageController::class, 'show'])
+    ->defaults('page', 'download-social-media-videos')
+    ->name('seo.download-social-media-videos');
+Route::get('one-click-torrent-seeding', [SeoPageController::class, 'show'])
+    ->defaults('page', 'one-click-torrent-seeding')
+    ->name('seo.one-click-torrent-seeding');
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
     Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
+
+Route::get('files/{storedFile}/cast', [StoredFileAccessController::class, 'cast'])
+    ->middleware('signed')
+    ->name('files.cast');
+Route::get('files/{storedFile}/hls/master.m3u8', [StoredFileAccessController::class, 'hlsManifest'])
+    ->middleware('signed')
+    ->name('files.hls.manifest');
+Route::get('files/{storedFile}/hls/{path}', [StoredFileAccessController::class, 'hlsAsset'])
+    ->where('path', '.*')
+    ->middleware('signed')
+    ->name('files.hls.asset');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');

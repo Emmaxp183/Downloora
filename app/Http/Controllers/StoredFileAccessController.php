@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\StorageUsageEvent;
 use App\Models\StoredFile;
 use App\Services\Transferd\TransferdUrlFactory;
+use App\Support\VideoFiles;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -42,6 +45,82 @@ class StoredFileAccessController extends Controller
 
         $disposition = $this->contentDisposition(HeaderUtils::DISPOSITION_INLINE, $storedFile->name);
 
+        return $this->streamResponse($request, $storedFile, $disposition);
+    }
+
+    public function cast(Request $request, StoredFile $storedFile): RedirectResponse|StreamedResponse
+    {
+        abort_unless(VideoFiles::isVideo($storedFile), 404);
+
+        $disposition = $this->contentDisposition(HeaderUtils::DISPOSITION_INLINE, $storedFile->name);
+
+        return $this->streamResponse($request, $storedFile, $disposition);
+    }
+
+    public function hlsManifest(StoredFile $storedFile): Response
+    {
+        abort_unless($this->hasAdaptiveStream($storedFile), 404);
+
+        return $this->playlistResponse($storedFile, $storedFile->adaptive_stream_playlist_key);
+    }
+
+    public function hlsAsset(Request $request, StoredFile $storedFile, string $path): RedirectResponse|Response|StreamedResponse
+    {
+        abort_unless($this->hasAdaptiveStream($storedFile), 404);
+        abort_if(Str::contains($path, ['..', '\\']) || Str::startsWith($path, '/'), 404);
+
+        $key = dirname((string) $storedFile->adaptive_stream_playlist_key).'/'.$path;
+
+        abort_unless($storedFile->adaptiveStreamDisk()->exists($key), 404);
+
+        if (Str::endsWith($key, '.m3u8')) {
+            return $this->playlistResponse($storedFile, $key);
+        }
+
+        if ($this->transferdUrls->enabledForDisk((string) $storedFile->adaptive_stream_disk)) {
+            return redirect()->away($this->transferdUrls->objectUrl(
+                request: $request,
+                backend: (string) $storedFile->adaptive_stream_disk,
+                bucket: $storedFile->adaptive_stream_bucket ?: config('filesystems.disks.s3.bucket'),
+                key: $key,
+                name: basename($path),
+                mimeType: $this->hlsContentType($path),
+                sizeBytes: (int) $storedFile->adaptiveStreamDisk()->size($key),
+                disposition: $this->contentDisposition(HeaderUtils::DISPOSITION_INLINE, basename($path)),
+                cacheControl: 'private, max-age=300',
+                cors: true,
+            ));
+        }
+
+        $stream = $storedFile->adaptiveStreamDisk()->readStream($key);
+
+        if (! is_resource($stream)) {
+            throw new RuntimeException("Unable to read adaptive stream asset [{$storedFile->id}:{$path}].");
+        }
+
+        return response()->stream(function () use ($stream): void {
+            try {
+                while (! feof($stream)) {
+                    $chunk = fread($stream, 1024 * 1024);
+
+                    if ($chunk === false || $chunk === '') {
+                        break;
+                    }
+
+                    echo $chunk;
+                }
+            } finally {
+                fclose($stream);
+            }
+        }, 200, [
+            'Access-Control-Allow-Origin' => '*',
+            'Cache-Control' => 'private, max-age=300',
+            'Content-Type' => $this->hlsContentType($path),
+        ]);
+    }
+
+    private function streamResponse(Request $request, StoredFile $storedFile, string $disposition): RedirectResponse|StreamedResponse
+    {
         if ($this->transferdUrls->enabledFor($storedFile)) {
             return redirect()->away($this->transferdUrls->url($request, $storedFile, $disposition));
         }
@@ -54,11 +133,77 @@ class StoredFileAccessController extends Controller
         ]);
     }
 
+    private function playlistResponse(StoredFile $storedFile, ?string $key): Response
+    {
+        abort_unless(is_string($key) && $key !== '', 404);
+
+        $contents = $storedFile->adaptiveStreamDisk()->get($key);
+
+        if (! is_string($contents)) {
+            throw new RuntimeException("Unable to read adaptive stream playlist [{$storedFile->id}].");
+        }
+
+        return response($this->signedPlaylist($storedFile, $key, $contents), 200, [
+            'Access-Control-Allow-Origin' => '*',
+            'Cache-Control' => 'private, max-age=300',
+            'Content-Type' => 'application/vnd.apple.mpegurl',
+        ]);
+    }
+
+    private function signedPlaylist(StoredFile $storedFile, string $playlistKey, string $contents): string
+    {
+        $basePath = trim(Str::after(dirname($playlistKey), dirname((string) $storedFile->adaptive_stream_playlist_key)), '/');
+        $expiresAt = now()->addSeconds((int) config('media.adaptive.url_ttl_seconds', 21600));
+
+        return collect(preg_split('/\r\n|\r|\n/', $contents))
+            ->map(function (string $line) use ($storedFile, $basePath, $expiresAt): string {
+                $trimmed = trim($line);
+
+                if ($trimmed === '' || Str::startsWith($trimmed, '#') || Str::startsWith($trimmed, ['http://', 'https://'])) {
+                    return $line;
+                }
+
+                $path = $basePath === '' ? $trimmed : $basePath.'/'.$trimmed;
+
+                return URL::temporarySignedRoute('files.hls.asset', $expiresAt, [
+                    'storedFile' => $storedFile,
+                    'path' => $path,
+                ]);
+            })
+            ->implode("\n");
+    }
+
+    private function hasAdaptiveStream(StoredFile $storedFile): bool
+    {
+        return $storedFile->adaptive_stream_status === 'ready'
+            && filled($storedFile->adaptive_stream_disk)
+            && filled($storedFile->adaptive_stream_playlist_key);
+    }
+
+    private function hlsContentType(string $path): string
+    {
+        return match (Str::lower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'm3u8' => 'application/vnd.apple.mpegurl',
+            'ts' => 'video/mp2t',
+            default => 'application/octet-stream',
+        };
+    }
+
+    private function deleteAdaptiveStream(StoredFile $storedFile): void
+    {
+        if (! filled($storedFile->adaptive_stream_disk) || ! filled($storedFile->adaptive_stream_playlist_key)) {
+            return;
+        }
+
+        $storedFile->adaptiveStreamDisk()->deleteDirectory(dirname((string) $storedFile->adaptive_stream_playlist_key));
+    }
+
     public function destroy(StoredFile $storedFile): RedirectResponse
     {
         Gate::authorize('delete', $storedFile);
 
         $storedFile->s3Disk()->delete($storedFile->s3_key);
+        $this->deleteAdaptiveStream($storedFile);
 
         DB::transaction(function () use ($storedFile): void {
             StorageUsageEvent::create([

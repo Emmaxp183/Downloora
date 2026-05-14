@@ -17,11 +17,11 @@
     };
 
     let {
-        activeDownload = false,
+        downloadLimitReached = false,
         initialUrl = '',
         wishlistItems = [],
     }: {
-        activeDownload?: boolean;
+        downloadLimitReached?: boolean;
         initialUrl?: string | null;
         wishlistItems?: WishlistItem[];
     } = $props();
@@ -121,7 +121,7 @@
                     type="submit"
                     disabled={processing}
                     class="flex w-16 shrink-0 items-center justify-center border-l-2 border-foreground bg-[var(--downloora-orange)] text-[var(--downloora-ink)] transition hover:bg-[var(--downloora-lime)] disabled:cursor-not-allowed disabled:opacity-50"
-                    title={activeDownload
+                    title={downloadLimitReached
                         ? 'Save link to wishlist'
                         : 'Add link'}
                 >
@@ -131,7 +131,7 @@
 
             <WishlistPanel
                 items={wishlistItems}
-                disabled={activeDownload}
+                disabled={downloadLimitReached}
                 currentUrl={urlValue}
                 {processing}
             />
@@ -142,13 +142,13 @@
                 name="torrent_file"
                 type="file"
                 accept=".torrent,application/x-bittorrent"
-                disabled={activeDownload || processing}
+                disabled={downloadLimitReached || processing}
                 class="hidden"
                 onchange={(event) => submitTorrentFile(event, submit)}
             />
             <button
                 type="button"
-                disabled={activeDownload || processing}
+                disabled={downloadLimitReached || processing}
                 onclick={chooseTorrentFile}
                 class="downloora-icon-button relative min-h-14 w-14 shrink-0 bg-[var(--downloora-lime)] text-[var(--downloora-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 title="Upload torrent file"
@@ -181,9 +181,9 @@
             <p class="mt-2 text-sm font-medium text-muted-foreground">
                 Uploading torrent file {progress.percentage}%.
             </p>
-        {:else if activeDownload}
+        {:else if downloadLimitReached}
             <p class="mt-2 text-sm font-medium text-muted-foreground">
-                Active download running. New links will be saved to your
+                Download limit reached. New links will be saved to your
                 wishlist.
             </p>
         {/if}

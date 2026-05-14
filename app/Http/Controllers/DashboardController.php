@@ -26,6 +26,9 @@ class DashboardController extends Controller
         $currentPlan = $subscription?->valid()
             ? $billingPlans->findByPriceId($subscription->stripe_price)
             : null;
+        $activeDownloadCount = $user->torrents()->active()->count()
+            + $user->mediaImports()->active()->count();
+        $activeDownloadLimit = max(1, (int) config('torrents.per_user_active_limit', 5));
 
         $activeTorrent = $user->torrents()
             ->active()
@@ -57,6 +60,9 @@ class DashboardController extends Controller
             ],
             'activeTorrent' => $activeTorrent ? $this->torrentPayload($activeTorrent, $downloadSpeedSampler) : null,
             'activeMediaImport' => $activeMediaImport ? $this->mediaImportPayload($activeMediaImport, $downloadSpeedSampler) : null,
+            'activeDownloadCount' => $activeDownloadCount,
+            'activeDownloadLimit' => $activeDownloadLimit,
+            'activeDownloadLimitReached' => $activeDownloadCount >= $activeDownloadLimit,
             'systemMetrics' => $serverMetrics->snapshot(),
             'prefillUrl' => $this->prefillUrl($request),
             'prefillAutoSubmit' => $this->prefillAutoSubmit($request),

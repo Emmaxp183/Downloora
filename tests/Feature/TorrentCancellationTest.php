@@ -3,9 +3,10 @@
 use App\Enums\TorrentStatus;
 use App\Models\Torrent;
 use App\Models\User;
-use App\Services\Torrents\QBittorrentClient;
+use App\Services\Torrents\RqbitClient;
+use App\Services\Torrents\TorrentEngineClient;
 
-test('owners can cancel active torrents and delete partial qBittorrent files', function () {
+test('owners can cancel active torrents and delete partial rqbit files', function () {
     $user = User::factory()->create();
     $torrent = Torrent::factory()->for($user)->create([
         'status' => TorrentStatus::Downloading,
@@ -15,7 +16,7 @@ test('owners can cancel active torrents and delete partial qBittorrent files', f
 
     $deleted = false;
 
-    app()->instance(QBittorrentClient::class, new class($deleted) extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class($deleted) extends RqbitClient
     {
         public function __construct(private bool &$deleted) {}
 
@@ -44,7 +45,7 @@ test('users cannot cancel torrents owned by someone else', function () {
 
     $deleted = false;
 
-    app()->instance(QBittorrentClient::class, new class($deleted) extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class($deleted) extends RqbitClient
     {
         public function __construct(private bool &$deleted) {}
 

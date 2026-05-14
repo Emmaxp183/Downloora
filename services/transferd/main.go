@@ -25,14 +25,16 @@ import (
 )
 
 type claims struct {
-	Backend     string `json:"backend"`
-	Bucket      string `json:"bucket"`
-	Key         string `json:"key"`
-	Name        string `json:"name"`
-	MimeType    string `json:"mime_type"`
-	SizeBytes   int64  `json:"size_bytes"`
-	Disposition string `json:"disposition"`
-	ExpiresAt   int64  `json:"expires_at"`
+	Backend      string `json:"backend"`
+	Bucket       string `json:"bucket"`
+	Key          string `json:"key"`
+	Name         string `json:"name"`
+	MimeType     string `json:"mime_type"`
+	SizeBytes    int64  `json:"size_bytes"`
+	Disposition  string `json:"disposition"`
+	CacheControl string `json:"cache_control"`
+	Cors         bool   `json:"cors"`
+	ExpiresAt    int64  `json:"expires_at"`
 }
 
 type byteRange struct {
@@ -271,12 +273,19 @@ func (s *server) localPath(key string) (string, error) {
 }
 
 func writeHeaders(w http.ResponseWriter, claims claims, size int64, fileRange byteRange) {
-	length := max(fileRange.End-fileRange.Start+1, 0)
-
 	w.Header().Set("Accept-Ranges", "bytes")
 	w.Header().Set("Content-Type", contentType(claims))
 	w.Header().Set("Content-Disposition", disposition(claims))
-	w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
+	if claims.CacheControl != "" {
+		w.Header().Set("Cache-Control", claims.CacheControl)
+	}
+	if claims.Cors {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+	if size > 0 {
+		length := max(fileRange.End-fileRange.Start+1, 0)
+		w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
+	}
 	if fileRange.Status == http.StatusPartialContent {
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", fileRange.Start, fileRange.End, size))
 	}
@@ -286,6 +295,12 @@ func writeRangeNotSatisfiable(w http.ResponseWriter, size int64, claims claims) 
 	w.Header().Set("Accept-Ranges", "bytes")
 	w.Header().Set("Content-Type", contentType(claims))
 	w.Header().Set("Content-Disposition", disposition(claims))
+	if claims.CacheControl != "" {
+		w.Header().Set("Cache-Control", claims.CacheControl)
+	}
+	if claims.Cors {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	w.Header().Set("Content-Length", "0")
 	w.Header().Set("Content-Range", fmt.Sprintf("bytes */%d", size))
 	w.WriteHeader(http.StatusRequestedRangeNotSatisfiable)

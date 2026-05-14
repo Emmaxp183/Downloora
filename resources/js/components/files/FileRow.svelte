@@ -26,6 +26,9 @@
         size_bytes: number;
         download_url: string;
         stream_url: string;
+        cast_url: string | null;
+        adaptive_stream_url: string | null;
+        adaptive_stream_status: string | null;
         updated_at?: string | null;
     };
 
@@ -55,16 +58,46 @@
         return match?.[1]?.toLowerCase() ?? '';
     };
 
+    const videoExtensions = [
+        '3gp',
+        'asf',
+        'avi',
+        'divx',
+        'dv',
+        'f4v',
+        'flv',
+        'm2ts',
+        'm2v',
+        'm4v',
+        'mkv',
+        'mov',
+        'mp4',
+        'mpeg',
+        'mpg',
+        'mts',
+        'ogm',
+        'ogv',
+        'rm',
+        'rmvb',
+        'ts',
+        'vob',
+        'webm',
+        'wmv',
+    ];
+
     const getFileIconKind = (
         mimeType: string | null,
         extension: string,
     ): FileIconKind => {
-        if (mimeType?.startsWith('image/')) {
-            return 'image';
+        if (
+            mimeType?.startsWith('video/') ||
+            videoExtensions.includes(extension)
+        ) {
+            return 'video';
         }
 
-        if (mimeType?.startsWith('video/')) {
-            return 'video';
+        if (mimeType?.startsWith('image/')) {
+            return 'image';
         }
 
         if (mimeType?.startsWith('audio/')) {
@@ -156,7 +189,10 @@
         mimeType: string | null,
         extension: string,
     ): PreviewKind | null => {
-        if (mimeType?.startsWith('video/')) {
+        if (
+            mimeType?.startsWith('video/') ||
+            videoExtensions.includes(extension)
+        ) {
             return 'video';
         }
 

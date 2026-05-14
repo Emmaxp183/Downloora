@@ -10,7 +10,7 @@ use App\Jobs\InspectMediaImport;
 use App\Jobs\InspectTorrentMetadata;
 use App\Models\MediaImport;
 use App\Models\Torrent;
-use App\Services\Torrents\QBittorrentClient;
+use App\Services\Torrents\TorrentEngineClient;
 use App\Services\Wishlist\WishlistSaver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -30,10 +30,11 @@ class TorrentController extends Controller
             default => 'url',
         };
 
-        $hasActiveDownload = $user->torrents()->active()->exists()
-            || $user->mediaImports()->active()->exists();
+        $activeDownloadCount = $user->torrents()->active()->count()
+            + $user->mediaImports()->active()->count();
+        $activeDownloadLimit = max(1, (int) config('torrents.per_user_active_limit', 5));
 
-        if ($hasActiveDownload) {
+        if ($activeDownloadCount >= $activeDownloadLimit) {
             if ($request->downloadUrl() !== null) {
                 $wishlistSaver->save($user, $request->downloadUrl());
 
@@ -41,7 +42,7 @@ class TorrentController extends Controller
             }
 
             throw ValidationException::withMessages([
-                $activeErrorField => __('Upload torrent files after your active download finishes.'),
+                $activeErrorField => __('Upload torrent files after one of your active downloads finishes.'),
             ]);
         }
 
@@ -79,7 +80,7 @@ class TorrentController extends Controller
         return to_route('dashboard');
     }
 
-    public function destroy(Torrent $torrent, QBittorrentClient $client): RedirectResponse
+    public function destroy(Torrent $torrent, TorrentEngineClient $client): RedirectResponse
     {
         Gate::authorize('delete', $torrent);
 

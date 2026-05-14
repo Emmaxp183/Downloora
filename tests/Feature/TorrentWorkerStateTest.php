@@ -5,10 +5,10 @@ use App\Jobs\ImportCompletedTorrent;
 use App\Jobs\PollTorrentProgress;
 use App\Jobs\StartTorrentDownload;
 use App\Models\Torrent;
-use App\Services\Torrents\QBittorrentClient;
+use App\Services\Torrents\TorrentEngineClient;
 use Illuminate\Support\Facades\Bus;
 
-test('queued torrents become downloading when qBittorrent accepts them', function () {
+test('queued torrents become downloading when the torrent engine accepts them', function () {
     Bus::fake([PollTorrentProgress::class]);
 
     $torrent = Torrent::factory()->create([
@@ -16,12 +16,31 @@ test('queued torrents become downloading when qBittorrent accepts them', functio
         'qbittorrent_hash' => null,
     ]);
 
-    app()->instance(QBittorrentClient::class, new class extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class implements TorrentEngineClient
     {
-        public function addMagnet(Torrent $torrent, bool $paused = false): void
+        public function addMagnet(Torrent $torrent, bool $paused = false, bool $reuseExisting = true): void
         {
             $torrent->forceFill(['qbittorrent_hash' => 'abc123'])->save();
         }
+
+        public function addTorrentFile(Torrent $torrent, bool $paused = false): void {}
+
+        public function getTorrent(string $hash): array
+        {
+            return [];
+        }
+
+        public function torrents(): array
+        {
+            return [];
+        }
+
+        public function files(string $hash): array
+        {
+            return [];
+        }
+
+        public function delete(string $hash, bool $deleteFiles = true): void {}
     });
 
     app()->call([new StartTorrentDownload($torrent), 'handle']);
@@ -33,21 +52,40 @@ test('queued torrents become downloading when qBittorrent accepts them', functio
     Bus::assertDispatched(PollTorrentProgress::class);
 });
 
-test('qBittorrent start failures mark torrents as download failed', function () {
+test('torrent engine start failures mark torrents as download failed', function () {
     $torrent = Torrent::factory()->create(['status' => TorrentStatus::Queued]);
 
-    app()->instance(QBittorrentClient::class, new class extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class implements TorrentEngineClient
     {
-        public function addMagnet(Torrent $torrent, bool $paused = false): void
+        public function addMagnet(Torrent $torrent, bool $paused = false, bool $reuseExisting = true): void
         {
-            throw new RuntimeException('qBittorrent unavailable');
+            throw new RuntimeException('Torrent engine unavailable');
         }
+
+        public function addTorrentFile(Torrent $torrent, bool $paused = false): void {}
+
+        public function getTorrent(string $hash): array
+        {
+            return [];
+        }
+
+        public function torrents(): array
+        {
+            return [];
+        }
+
+        public function files(string $hash): array
+        {
+            return [];
+        }
+
+        public function delete(string $hash, bool $deleteFiles = true): void {}
     });
 
     app()->call([new StartTorrentDownload($torrent), 'handle']);
 
     expect($torrent->refresh()->status)->toBe(TorrentStatus::DownloadFailed)
-        ->and($torrent->error_message)->toBe('qBittorrent unavailable');
+        ->and($torrent->error_message)->toBe('Torrent engine unavailable');
 });
 
 test('polling updates download progress', function () {
@@ -58,8 +96,12 @@ test('polling updates download progress', function () {
         'qbittorrent_hash' => 'abc123',
     ]);
 
-    app()->instance(QBittorrentClient::class, new class extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class implements TorrentEngineClient
     {
+        public function addMagnet(Torrent $torrent, bool $paused = false, bool $reuseExisting = true): void {}
+
+        public function addTorrentFile(Torrent $torrent, bool $paused = false): void {}
+
         public function getTorrent(string $hash): array
         {
             return [
@@ -68,6 +110,18 @@ test('polling updates download progress', function () {
                 'downloaded' => 420,
             ];
         }
+
+        public function torrents(): array
+        {
+            return [];
+        }
+
+        public function files(string $hash): array
+        {
+            return [];
+        }
+
+        public function delete(string $hash, bool $deleteFiles = true): void {}
     });
 
     app()->call([new PollTorrentProgress($torrent), 'handle']);
@@ -87,8 +141,12 @@ test('completed torrents are marked importing and dispatch import job', function
         'qbittorrent_hash' => 'abc123',
     ]);
 
-    app()->instance(QBittorrentClient::class, new class extends QBittorrentClient
+    app()->instance(TorrentEngineClient::class, new class implements TorrentEngineClient
     {
+        public function addMagnet(Torrent $torrent, bool $paused = false, bool $reuseExisting = true): void {}
+
+        public function addTorrentFile(Torrent $torrent, bool $paused = false): void {}
+
         public function getTorrent(string $hash): array
         {
             return [
@@ -97,6 +155,18 @@ test('completed torrents are marked importing and dispatch import job', function
                 'downloaded' => 1000,
             ];
         }
+
+        public function torrents(): array
+        {
+            return [];
+        }
+
+        public function files(string $hash): array
+        {
+            return [];
+        }
+
+        public function delete(string $hash, bool $deleteFiles = true): void {}
     });
 
     app()->call([new PollTorrentProgress($torrent), 'handle']);

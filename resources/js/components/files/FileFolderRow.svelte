@@ -16,6 +16,9 @@
         size_bytes: number;
         download_url: string;
         stream_url: string;
+        cast_url: string | null;
+        adaptive_stream_url: string | null;
+        adaptive_stream_status: string | null;
         updated_at?: string | null;
     };
 
@@ -30,10 +33,139 @@
         files: StoredFile[];
     };
 
+    type FileTreeFile = {
+        kind: 'file';
+        id: string;
+        name: string;
+        file: StoredFile;
+    };
+
+    type FileTreeFolder = {
+        kind: 'folder';
+        id: string;
+        name: string;
+        children: FileTreeNode[];
+    };
+
+    type FileTreeNode = FileTreeFile | FileTreeFolder;
+
     let { folder }: { folder: FileFolder } = $props();
 
     let expanded = $state(false);
+    let expandedTreeFolders = $state<Record<string, boolean>>({});
     let deleteDialogOpen = $state(false);
+
+    const collator = new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base',
+    });
+
+    const normalizePathSegments = (path: string): string[] =>
+        path
+            .replaceAll('\\', '/')
+            .split('/')
+            .map((segment) => segment.trim())
+            .filter(Boolean);
+
+    const fileSegments = (file: StoredFile, rootName: string): string[] => {
+        const segments = normalizePathSegments(file.original_path || file.name);
+
+        if (
+            segments.length > 1 &&
+            segments[0].localeCompare(rootName, undefined, {
+                sensitivity: 'base',
+            }) === 0
+        ) {
+            return segments.slice(1);
+        }
+
+        return segments.length > 0 ? segments : [file.name];
+    };
+
+    const sortNodes = (nodes: FileTreeNode[]): FileTreeNode[] =>
+        nodes
+            .map((node) =>
+                node.kind === 'folder'
+                    ? { ...node, children: sortNodes(node.children) }
+                    : node,
+            )
+            .sort((left, right) => {
+                if (left.kind !== right.kind) {
+                    return left.kind === 'folder' ? -1 : 1;
+                }
+
+                return collator.compare(left.name, right.name);
+            });
+
+    const buildFileTree = (
+        files: StoredFile[],
+        rootName: string,
+    ): FileTreeNode[] => {
+        const root: FileTreeFolder = {
+            kind: 'folder',
+            id: 'root',
+            name: rootName,
+            children: [],
+        };
+
+        for (const file of files) {
+            const segments = fileSegments(file, rootName);
+            let currentFolder = root;
+
+            for (const [index, segment] of segments.entries()) {
+                const isFile = index === segments.length - 1;
+
+                if (isFile) {
+                    currentFolder.children.push({
+                        kind: 'file',
+                        id: `file-${file.id}`,
+                        name: segment,
+                        file,
+                    });
+
+                    continue;
+                }
+
+                const folderId = `${currentFolder.id}/${segment}`;
+                let childFolder = currentFolder.children.find(
+                    (node): node is FileTreeFolder =>
+                        node.kind === 'folder' && node.id === folderId,
+                );
+
+                if (!childFolder) {
+                    childFolder = {
+                        kind: 'folder',
+                        id: folderId,
+                        name: segment,
+                        children: [],
+                    };
+
+                    currentFolder.children.push(childFolder);
+                }
+
+                currentFolder = childFolder;
+            }
+        }
+
+        return sortNodes(root.children);
+    };
+
+    const childFileCount = (node: FileTreeFolder): number =>
+        node.children.reduce(
+            (count, child) =>
+                count + (child.kind === 'file' ? 1 : childFileCount(child)),
+            0,
+        );
+
+    const isTreeFolderExpanded = (node: FileTreeFolder): boolean =>
+        expandedTreeFolders[node.id] ?? false;
+
+    const toggleTreeFolder = (node: FileTreeFolder): void => {
+        expandedTreeFolders = {
+            ...expandedTreeFolders,
+            [node.id]: !isTreeFolderExpanded(node),
+        };
+    };
 
     const size = $derived(`${(folder.size_bytes / 1024 / 1024).toFixed(2)} MB`);
     const changed = $derived(
@@ -60,6 +192,8 @@
               ? destroyMediaFolder.form(folder.media_import_id)
               : null,
     );
+
+    const fileTree = $derived(buildFileTree(folder.files, folder.name));
 </script>
 
 <div>
@@ -134,13 +268,62 @@
     </div>
 
     {#if expanded}
-        <div class="mt-3 space-y-3 pl-6">
-            {#each folder.files as file (file.id)}
-                <FileRow {file} />
+        <div class="mt-3 space-y-3 pl-3 sm:pl-6">
+            {#each fileTree as node (node.id)}
+                {@render treeNode(node, 0)}
             {/each}
         </div>
     {/if}
 </div>
+
+{#snippet treeNode(node: FileTreeNode, level: number)}
+    {#if node.kind === 'folder'}
+        <div class="space-y-3">
+            <button
+                type="button"
+                onclick={() => toggleTreeFolder(node)}
+                class="downloora-row flex min-h-16 w-full items-center gap-3 px-4 text-left"
+                style={`margin-left: ${level * 1.25}rem`}
+                aria-expanded={isTreeFolderExpanded(node)}
+            >
+                <span
+                    class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-[var(--downloora-paper)] text-[var(--downloora-ink)] shadow-[2px_2px_0_0_var(--foreground)]"
+                >
+                    <Folder class="size-6 fill-current stroke-[1.5]" />
+                </span>
+
+                <span class="min-w-0">
+                    <span class="block truncate text-base font-medium">
+                        {node.name}
+                    </span>
+                    <span
+                        class="block truncate text-xs font-medium text-muted-foreground"
+                    >
+                        {childFileCount(node) === 1
+                            ? '1 file'
+                            : `${childFileCount(node).toLocaleString()} files`}
+                    </span>
+                </span>
+
+                <ChevronRight
+                    class={`ml-auto size-5 shrink-0 transition-transform ${isTreeFolderExpanded(node) ? 'rotate-90' : ''}`}
+                />
+            </button>
+
+            {#if isTreeFolderExpanded(node)}
+                <div class="space-y-3">
+                    {#each node.children as child (child.id)}
+                        {@render treeNode(child, level + 1)}
+                    {/each}
+                </div>
+            {/if}
+        </div>
+    {:else}
+        <div style={`margin-left: ${level * 1.25}rem`}>
+            <FileRow file={node.file} />
+        </div>
+    {/if}
+{/snippet}
 
 {#if deleteForm}
     <ConfirmDeleteDialog
