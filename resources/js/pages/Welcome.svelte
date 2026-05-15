@@ -239,10 +239,16 @@
                     >
                         Login
                     </Link>
+                    <Link
+                        href={toUrl(login())}
+                        class="rounded-full border-2 border-[#1A261D] bg-[#C9E265] px-5 py-2.5 text-sm font-semibold shadow-[2px_2px_0_0_#1A261D] transition hover:bg-[#b5d145] sm:hidden"
+                    >
+                        Login
+                    </Link>
                     {#if canRegister}
                         <Link
                             href={toUrl(register())}
-                            class="rounded-full border-2 border-[#1A261D] bg-[#C9E265] px-5 py-2.5 text-sm font-semibold shadow-[2px_2px_0_0_#1A261D] transition hover:bg-[#b5d145]"
+                            class="hidden rounded-full border-2 border-[#1A261D] bg-[#C9E265] px-5 py-2.5 text-sm font-semibold shadow-[2px_2px_0_0_#1A261D] transition hover:bg-[#b5d145] sm:inline-flex"
                         >
                             Register
                         </Link>

@@ -2,8 +2,10 @@
 
 use App\Listeners\SyncStripeSubscriptionQuota;
 use App\Models\User;
+use App\Services\Billing\StripeBillingStateResetter;
 use App\Services\Billing\StripeSubscriptionSyncer;
 use Laravel\Cashier\Events\WebhookHandled;
+use Laravel\Cashier\SubscriptionItem;
 use Stripe\Subscription as StripeSubscription;
 
 test('checkout requires a configured stripe price id', function () {
@@ -114,4 +116,41 @@ test('stripe subscription sync creates the local subscription and updates quota'
         ->and($user->refresh()->storage_quota_bytes)->toBe(50 * 1024 * 1024 * 1024)
         ->and($user->subscription(config('billing.subscription_type'))->stripe_status)->toBe('active')
         ->and($user->subscription(config('billing.subscription_type'))->stripe_price)->toBe('price_downloora_basic_monthly');
+});
+
+test('stripe billing state resetter clears stale sandbox billing records', function () {
+    config(['billing.default_quota_bytes' => 2 * 1024 * 1024 * 1024]);
+
+    $user = User::factory()->create([
+        'stripe_id' => 'cus_stale_sandbox',
+        'pm_type' => 'card',
+        'pm_last_four' => '4242',
+        'trial_ends_at' => now()->addDay(),
+        'storage_quota_bytes' => 100 * 1024 * 1024 * 1024,
+    ]);
+
+    $subscription = $user->subscriptions()->create([
+        'type' => config('billing.subscription_type'),
+        'stripe_id' => 'sub_stale_sandbox',
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_stale_sandbox',
+        'quantity' => 1,
+    ]);
+
+    $subscription->items()->create([
+        'stripe_id' => 'si_stale_sandbox',
+        'stripe_product' => 'prod_stale_sandbox',
+        'stripe_price' => 'price_stale_sandbox',
+        'quantity' => 1,
+    ]);
+
+    $resetUser = app(StripeBillingStateResetter::class)->reset($user);
+
+    expect($resetUser->stripe_id)->toBeNull()
+        ->and($resetUser->pm_type)->toBeNull()
+        ->and($resetUser->pm_last_four)->toBeNull()
+        ->and($resetUser->trial_ends_at)->toBeNull()
+        ->and($resetUser->storage_quota_bytes)->toBe(2 * 1024 * 1024 * 1024)
+        ->and($resetUser->subscriptions()->count())->toBe(0)
+        ->and(SubscriptionItem::query()->where('stripe_id', 'si_stale_sandbox')->exists())->toBeFalse();
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Billing\StripeBillingStateResetter;
 use App\Services\Billing\StripeSubscriptionSyncer;
 use App\Support\BillingPlans;
 use Illuminate\Http\RedirectResponse;
@@ -14,8 +15,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BillingController extends Controller
 {
-    public function checkout(Request $request, string $plan, BillingPlans $plans): Response
-    {
+    public function checkout(
+        Request $request,
+        string $plan,
+        BillingPlans $plans,
+        StripeBillingStateResetter $billingStateResetter,
+    ): Response {
         $selectedPlan = $plans->find($plan);
 
         if (! $selectedPlan) {
@@ -33,24 +38,33 @@ class BillingController extends Controller
         $user = $request->user();
 
         if ($user->subscribed($plans->subscriptionType())) {
-            return Inertia::location($user->billingPortalUrl(route('dashboard')));
+            try {
+                return Inertia::location($user->billingPortalUrl(route('dashboard')));
+            } catch (InvalidRequestException $exception) {
+                if (! $this->isMissingStripeCustomerError($exception)) {
+                    throw $exception;
+                }
+
+                $user = $billingStateResetter->reset($user);
+            }
         }
 
         try {
             return $this->startCheckout($user, $selectedPlan, $plans);
         } catch (InvalidRequestException $exception) {
+            if ($this->isMissingStripeCustomerError($exception)) {
+                return $this->startCheckout(
+                    $billingStateResetter->reset($user),
+                    $selectedPlan,
+                    $plans,
+                );
+            }
+
             if (! $this->isCurrencyLockedCustomerError($exception) || ! app()->environment(['local', 'testing'])) {
                 throw $exception;
             }
 
-            $user->forceFill([
-                'stripe_id' => null,
-                'pm_type' => null,
-                'pm_last_four' => null,
-                'trial_ends_at' => null,
-            ])->save();
-
-            return $this->startCheckout($user->refresh(), $selectedPlan, $plans);
+            return $this->startCheckout($billingStateResetter->reset($user), $selectedPlan, $plans);
         }
     }
 
@@ -61,7 +75,6 @@ class BillingController extends Controller
             ->checkout([
                 'success_url' => route('billing.success').'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('billing.cancel'),
-                'payment_method_types' => ['card', 'ideal'],
                 'allow_promotion_codes' => true,
                 'metadata' => [
                     'downloora_plan' => $selectedPlan['id'],
@@ -81,7 +94,14 @@ class BillingController extends Controller
         return str_contains($exception->getMessage(), 'You cannot combine currencies on a single customer');
     }
 
-    public function portal(Request $request): Response|RedirectResponse
+    private function isMissingStripeCustomerError(InvalidRequestException $exception): bool
+    {
+        return $exception->getStripeCode() === 'resource_missing'
+            && $exception->getStripeParam() === 'customer'
+            && str_contains($exception->getMessage(), 'No such customer');
+    }
+
+    public function portal(Request $request, StripeBillingStateResetter $billingStateResetter): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -91,7 +111,19 @@ class BillingController extends Controller
                 ->with('status', 'Choose a plan before opening billing settings.');
         }
 
-        return Inertia::location($user->billingPortalUrl(route('dashboard')));
+        try {
+            return Inertia::location($user->billingPortalUrl(route('dashboard')));
+        } catch (InvalidRequestException $exception) {
+            if (! $this->isMissingStripeCustomerError($exception)) {
+                throw $exception;
+            }
+
+            $billingStateResetter->reset($user);
+
+            return redirect()
+                ->route('dashboard')
+                ->with('status', 'Your previous billing profile was from sandbox mode. Choose a plan to start live billing.');
+        }
     }
 
     public function success(Request $request, StripeSubscriptionSyncer $stripeSubscriptionSyncer): RedirectResponse
